@@ -36,6 +36,11 @@ class RuleBasedResponseGenerator:
     CONFIDENCE_THRESHOLD = 0.5
 
     RESPONSES = {
+        "greeting": (
+            "Hello! Welcome to customer support. How can I help you "
+            "today? I can assist with account issues, technical support, "
+            "billing inquiries, or order status."
+        ),
         "account_issue": (
             "I can help with account issues. To reset your password or "
             "unlock your account, please visit the 'Account Settings' "

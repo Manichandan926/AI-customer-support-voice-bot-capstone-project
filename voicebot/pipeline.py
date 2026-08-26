@@ -11,10 +11,29 @@ class passed in here for one stage — the VoiceBotPipeline class
 itself does not change.
 """
 
-from voicebot.dialogue.response_generator import RuleBasedResponseGenerator
+import os
+
 from voicebot.input.console_input import ConsoleInputSource
 from voicebot.nlu.intent_classifier import KeywordIntentClassifier
 from voicebot.output.console_output import ConsoleOutputSink
+
+
+def _default_response_generator():
+    """Pick the best available response generator at startup.
+
+    • If a GROQ_API_KEY is set → use the Groq LLM generator.
+    • Otherwise → fall back to the rule-based canned responses.
+    """
+    if os.environ.get("GROQ_API_KEY"):
+        from voicebot.dialogue.groq_response_generator import (
+            GroqResponseGenerator,
+        )
+        return GroqResponseGenerator()
+
+    from voicebot.dialogue.response_generator import (
+        RuleBasedResponseGenerator,
+    )
+    return RuleBasedResponseGenerator()
 
 
 class VoiceBotPipeline:
@@ -25,7 +44,7 @@ class VoiceBotPipeline:
         VoiceBotPipeline(
             input_source=WhisperInputSource(),      # real ASR
             intent_classifier=DistilBertClassifier(),  # real NLU
-            response_generator=RuleBasedResponseGenerator(),  # unchanged
+            response_generator=GroqResponseGenerator(),  # LLM responses
             output_sink=PiperOutputSink(),          # real TTS
         )
     """
@@ -34,21 +53,28 @@ class VoiceBotPipeline:
 
     def __init__(
         self,
-        input_source: ConsoleInputSource = None,
-        intent_classifier: KeywordIntentClassifier = None,
-        response_generator: RuleBasedResponseGenerator = None,
-        output_sink: ConsoleOutputSink = None,
+        input_source=None,
+        intent_classifier=None,
+        response_generator=None,
+        output_sink=None,
     ):
         self.input_source = input_source or ConsoleInputSource()
         self.intent_classifier = intent_classifier or KeywordIntentClassifier()
-        self.response_generator = response_generator or RuleBasedResponseGenerator()
+        self.response_generator = response_generator or _default_response_generator()
         self.output_sink = output_sink or ConsoleOutputSink()
 
     def run_once(self, text: str):
         """Run one query through NLU -> dialogue -> output. Returns the
         Response object (useful for tests, without needing real I/O)."""
         intent = self.intent_classifier.classify(text)
-        response = self.response_generator.generate(intent)
+
+        # If the generator supports user_text (Groq), pass it through;
+        # otherwise fall back to the old signature (rule-based).
+        try:
+            response = self.response_generator.generate(intent, user_text=text)
+        except TypeError:
+            response = self.response_generator.generate(intent)
+
         self.output_sink.speak(response)
         return intent, response
 
@@ -75,4 +101,13 @@ class VoiceBotPipeline:
 
 
 if __name__ == "__main__":
+    # Load .env file (GROQ_API_KEY, etc.) before anything reads os.environ.
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    # Suppress noisy HTTP request logs from the groq/httpx libraries.
+    import logging
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("groq").setLevel(logging.WARNING)
+
     VoiceBotPipeline().run()

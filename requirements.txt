@@ -1,4 +1,7 @@
-# No external dependencies for the text prototype (standard library only).
+# Core dependencies
+groq>=0.11.0
+python-dotenv>=1.0.0
+
 # When real ASR/NLU/TTS modules are added, pin their versions here, e.g.:
 # openai-whisper==...
 # onnxruntime==...

@@ -31,6 +31,10 @@ class KeywordIntentClassifier:
 
     # Keyword table — easy to extend without touching any logic below.
     INTENT_KEYWORDS: Dict[str, List[str]] = {
+        "greeting": [
+            "hi", "hello", "hey", "good morning", "good afternoon",
+            "good evening", "howdy", "greetings", "sup",
+        ],
         "account_issue": [
             "account", "password", "login", "log in", "sign in",
             "locked out", "reset", "username", "profile",
