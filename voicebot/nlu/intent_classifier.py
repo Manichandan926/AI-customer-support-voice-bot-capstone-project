@@ -48,9 +48,18 @@ class KeywordIntentClassifier:
             "subscription", "price", "cost", "plan",
         ],
         "order_status": [
-            "order", "shipment", "delivery", "tracking", "shipped",
-            "package", "arrive",
-        ],
+    "order", "shipment", "delivery", "tracking", "shipped",
+    "package", "arrive",
+    "track my package",
+    "track my order",
+    "where is my package",
+    "where is my order",
+    "when will my order arrive",
+    "when will my package arrive",
+    "my package hasn't arrived",
+    "my delivery is late",
+],
+
     }
 
     FALLBACK_INTENT = "general_inquiry"
