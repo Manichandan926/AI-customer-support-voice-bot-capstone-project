@@ -70,7 +70,7 @@ class KeywordIntentClassifier:
         if not best_matches:
             return Intent(label=self.FALLBACK_INTENT, confidence=0.3, matched_keywords=[])
 
-        # Toy confidence score: more keyword hits -> higher confidence.
-        # A real model would output a proper probability distribution.
+        
+        
         confidence = min(0.5 + 0.15 * len(best_matches), 0.95)
         return Intent(label=best_label, confidence=confidence, matched_keywords=best_matches)
