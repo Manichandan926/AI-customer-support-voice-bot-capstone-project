@@ -73,7 +73,26 @@ class RuleBasedResponseGenerator:
         "connect you with a human agent for this one."
     )
 
-    def generate(self, intent: Intent) -> Response:
+    def generate(
+        self,
+        intent: Intent,
+        user_text: str = "",
+        conversation_history=None,
+    ) -> Response:
+        history = conversation_history or []
+
+        if intent.label == "general_inquiry" and history:
+            previous_intent = history[-1].get("intent")
+            if previous_intent and previous_intent in self.RESPONSES:
+                label_name = previous_intent.replace("_", " ")
+                return Response(
+                    text=(
+                        f"I think you were asking about {label_name}. "
+                        "Could you rephrase your question so I can help more clearly?"
+                    ),
+                    escalated=False,
+                )
+
         if intent.confidence < self.CONFIDENCE_THRESHOLD:
             return Response(text=self.ESCALATION_MESSAGE, escalated=True)
 

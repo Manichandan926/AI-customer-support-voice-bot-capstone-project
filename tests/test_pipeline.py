@@ -38,6 +38,14 @@ class TestIntentClassifier(unittest.TestCase):
         self.assertEqual(intent.label, "general_inquiry")
         self.assertEqual(intent.matched_keywords, [])
 
+    def test_greeting_detected(self):
+        intent = self.classifier.classify("hello there, I need help")
+        self.assertEqual(intent.label, "greeting")
+
+    def test_order_status_phrase_variation_detected(self):
+        intent = self.classifier.classify("where is my order and when will it arrive?")
+        self.assertEqual(intent.label, "order_status")
+
 
 class TestResponseGenerator(unittest.TestCase):
     def setUp(self):
@@ -54,6 +62,15 @@ class TestResponseGenerator(unittest.TestCase):
         intent = self.classifier.classify("asdkjaslkdj random gibberish")
         response = self.generator.generate(intent)
         self.assertTrue(response.escalated)
+
+    def test_last_intent_context_is_used_for_fallback_follow_up(self):
+        intent = self.classifier.classify("where is it?")
+        response = self.generator.generate(
+            intent,
+            user_text="where is it?",
+            conversation_history=[{"intent": "order_status"}],
+        )
+        self.assertIn("order status", response.text.lower())
 
 
 if __name__ == "__main__":

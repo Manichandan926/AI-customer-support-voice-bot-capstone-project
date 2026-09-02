@@ -30,48 +30,58 @@ class KeywordIntentClassifier:
     """
 
     # Keyword table — easy to extend without touching any logic below.
+    # Longer phrases are intentionally checked before shorter ones so the
+    # classifier prefers specific user intents over generic words.
     INTENT_KEYWORDS: Dict[str, List[str]] = {
         "greeting": [
-            "hi", "hello", "hey", "good morning", "good afternoon",
-            "good evening", "howdy", "greetings", "sup",
+            "hello", "hi there", "good morning", "good afternoon",
+            "good evening", "hey there", "howdy", "greetings", "sup",
+            "hello there",
         ],
         "account_issue": [
-            "account", "password", "login", "log in", "sign in",
-            "locked out", "reset", "username", "profile",
+            "forgot my password", "reset my password", "can't log in",
+            "cannot log in", "account locked", "locked out", "unlock my account",
+            "sign in issue", "change password", "login issue", "password reset",
+            "access my account", "profile problem", "username issue", "account",
+            "password", "login", "log in", "sign in", "reset", "username", "profile",
         ],
         "technical_support": [
             "not working", "error", "bug", "crash", "broken",
-            "install", "setup", "device", "connect", "wifi", "bluetooth",
+            "install", "setup", "device", "connect", "cannot connect",
+            "can't connect", "wifi", "bluetooth", "app keeps crashing",
+            "connection problem", "technical issue", "system error",
         ],
         "billing_inquiry": [
-            "bill", "invoice", "payment", "charge", "refund",
-            "subscription", "price", "cost", "plan",
+            "charged twice", "double charge", "invoice", "payment failed",
+            "refund", "subscription", "price", "cost", "plan",
+            "billing", "charge", "charged", "refund request", "overcharged",
+            "bill", "payment",
         ],
         "order_status": [
-    "order", "shipment", "delivery", "tracking", "shipped",
-    "package", "arrive",
-    "track my package",
-    "track my order",
-    "where is my package",
-    "where is my order",
-    "when will my order arrive",
-    "when will my package arrive",
-    "my package hasn't arrived",
-    "my delivery is late",
-],
-
+            "track my package", "track my order", "where is my package",
+            "where is my order", "when will my order arrive",
+            "when will my package arrive", "my package hasn't arrived",
+            "my delivery is late", "shipment", "delivery", "tracking",
+            "shipped", "package", "order", "arrive",
+        ],
     }
 
     FALLBACK_INTENT = "general_inquiry"
 
+    def _normalize_text(self, text: str) -> str:
+        return " ".join(text.lower().split())
+
     def classify(self, text: str) -> Intent:
-        text_lower = text.lower()
+        text_lower = self._normalize_text(text)
 
         best_label = self.FALLBACK_INTENT
         best_matches: List[str] = []
 
         for label, keywords in self.INTENT_KEYWORDS.items():
-            matches = [kw for kw in keywords if kw in text_lower]
+            matches = []
+            for kw in keywords:
+                if kw in text_lower:
+                    matches.append(kw)
             if len(matches) > len(best_matches):
                 best_matches = matches
                 best_label = label
@@ -79,7 +89,8 @@ class KeywordIntentClassifier:
         if not best_matches:
             return Intent(label=self.FALLBACK_INTENT, confidence=0.3, matched_keywords=[])
 
-        
-        
-        confidence = min(0.5 + 0.15 * len(best_matches), 0.95)
+        confidence = min(0.45 + 0.12 * len(best_matches), 0.95)
+        if best_label == self.FALLBACK_INTENT:
+            confidence = 0.3
+
         return Intent(label=best_label, confidence=confidence, matched_keywords=best_matches)

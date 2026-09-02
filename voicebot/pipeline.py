@@ -21,14 +21,22 @@ from voicebot.output.console_output import ConsoleOutputSink
 def _default_response_generator():
     """Pick the best available response generator at startup.
 
-    • If a GROQ_API_KEY is set → use the Groq LLM generator.
+    • If a GROQ_API_KEY is set and the optional dependency is installed,
+      prefer the Groq LLM generator.
     • Otherwise → fall back to the rule-based canned responses.
     """
     if os.environ.get("GROQ_API_KEY"):
-        from voicebot.dialogue.groq_response_generator import (
-            GroqResponseGenerator,
-        )
-        return GroqResponseGenerator()
+        try:
+            from voicebot.dialogue.groq_response_generator import (
+                GroqResponseGenerator,
+            )
+            return GroqResponseGenerator()
+        except ModuleNotFoundError:
+            import logging
+            logging.getLogger(__name__).warning(
+                "GROQ_API_KEY is set but the optional 'groq' package is not installed; "
+                "falling back to the lightweight rule-based generator."
+            )
 
     from voicebot.dialogue.response_generator import (
         RuleBasedResponseGenerator,
@@ -62,19 +70,29 @@ class VoiceBotPipeline:
         self.intent_classifier = intent_classifier or KeywordIntentClassifier()
         self.response_generator = response_generator or _default_response_generator()
         self.output_sink = output_sink or ConsoleOutputSink()
+        self.conversation_history = []
 
     def run_once(self, text: str):
         """Run one query through NLU -> dialogue -> output. Returns the
         Response object (useful for tests, without needing real I/O)."""
         intent = self.intent_classifier.classify(text)
+        history = list(self.conversation_history)
 
-        # If the generator supports user_text (Groq), pass it through;
-        # otherwise fall back to the old signature (rule-based).
+        # If the generator supports user_text/history (Groq and enhanced rule-based
+        # generators), pass them through; otherwise fall back to older signatures.
         try:
-            response = self.response_generator.generate(intent, user_text=text)
+            response = self.response_generator.generate(
+                intent,
+                user_text=text,
+                conversation_history=history,
+            )
         except TypeError:
-            response = self.response_generator.generate(intent)
+            try:
+                response = self.response_generator.generate(intent, user_text=text)
+            except TypeError:
+                response = self.response_generator.generate(intent)
 
+        self.conversation_history.append({"intent": intent.label, "text": text})
         self.output_sink.speak(response)
         return intent, response
 
