@@ -52,10 +52,22 @@ tests/
 
 ## Running it
 
-Requires Python 3.8+, no external dependencies.
+Requires Python 3.8+.
+
+For the default lightweight setup (recommended for 8 GB laptops), install only the core dependencies:
 
 ```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
 python3 -m voicebot.pipeline
+```
+
+If you want the optional Groq-backed AI response generator, install the LLM extras instead:
+
+```bash
+pip install -r requirements-llm.txt
+export GROQ_API_KEY="your_key_here"
 ```
 
 Example session:
@@ -82,6 +94,23 @@ Bot: Thanks for reaching out. Goodbye!
 ```bash
 python3 -m unittest discover -v
 ```
+
+## Keeping the repo safe and contributor-friendly
+
+This project is designed to stay lightweight and merge-safe:
+
+- The default install is intentionally small to avoid heavy memory usage on 8 GB laptops.
+- The Groq dependency is optional and lives in `requirements-llm.txt`, so contributors do not need a large AI stack just to run the core prototype.
+- A Git pre-commit hook runs the test suite before a commit succeeds.
+- GitHub CI runs the same tests on push and pull requests to `main`.
+
+Install the commit hook once per clone:
+
+```bash
+./scripts/install_hooks.sh
+```
+
+For contribution rules and branch expectations, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Supported intents (current prototype scope)
 

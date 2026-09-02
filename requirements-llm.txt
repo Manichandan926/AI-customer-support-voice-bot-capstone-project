@@ -1,0 +1,4 @@
+# Optional LLM runtime dependency for Groq-powered responses.
+# Install only when you want the AI-backed response generator.
+-r requirements.txt
+groq>=0.11.0

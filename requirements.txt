@@ -1,8 +1,10 @@
-# Core dependencies
-groq>=0.11.0
+# Core dependencies kept intentionally lightweight for local development on
+# laptops with limited memory.
 python-dotenv>=1.0.0
 
 # When real ASR/NLU/TTS modules are added, pin their versions here, e.g.:
 # openai-whisper==...
 # onnxruntime==...
 # piper-tts==...
+
+# Optional AI response support is installed separately via requirements-llm.txt.
