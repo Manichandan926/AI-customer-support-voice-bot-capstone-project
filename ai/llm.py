@@ -133,11 +133,13 @@ class LLMAssistant:
     def available(self) -> list[str]:
         return [p.name for p in self.providers if p.name not in self._disabled]
 
-    def answer(self, query: str, knowledge: list[dict], history: list[dict]) -> tuple[str | None, str | None]:
+    def answer(self, query: str, knowledge: list[dict], history: list[dict],
+               language: str = "English") -> tuple[str | None, str | None]:
         """Returns (reply, provider_name). reply is None when every provider
         failed or the model decided the question needs a human."""
         kb = "\n".join(f"- Q: {f['question']}\n  A: {f['answer']}" for f in knowledge) or "(empty)"
-        messages = [*history, {"role": "user", "content": f"Knowledge base:\n{kb}\n\nCustomer: {query}"}]
+        reply_in = f"\n\nReply in {language}." if language != "English" else ""
+        messages = [*history, {"role": "user", "content": f"Knowledge base:\n{kb}\n\nCustomer: {query}{reply_in}"}]
 
         for p in self.providers:
             if p.name in self._disabled:

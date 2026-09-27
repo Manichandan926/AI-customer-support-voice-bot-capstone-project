@@ -35,6 +35,11 @@ No GPU, no local ML models, no multi-GB downloads.
 - **AI fallback** handles questions the FAQ list doesn't phrase directly. The
   LLM sees only the FAQ content and must reply `ESCALATE` if the answer
   isn't there, so it can't make up policies.
+- **English, Telugu and Hindi**: the language is detected per message
+  (script, or common romanized words like "naa order ekkada undi" / "mera
+  order kahan hai") and the whole reply - FAQ answers, order status,
+  clarifications, escalations - comes back in that language, spoken with a
+  matching neural voice (Neerja, Shruti, Swara).
 - **Sentiment detection** (offline, VADER + an anger lexicon): upset customers
   get an empathetic reply; repeated anger hands them to a senior agent with
   priority instead of another bot answer.
@@ -67,6 +72,7 @@ python main.py                      # text chat
 python main.py --mode voice         # press Enter, speak; it stops when you stop
 python main.py --speak              # type questions, hear replies
 python main.py --no-ai              # rule engine only, fully offline
+python main.py --mode voice --lang te   # listen and reply in Telugu (hi = Hindi)
 pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
 python -m asr.speech_to_text        # mic check: shows noise level, threshold, transcript
 ```
@@ -87,7 +93,9 @@ Type or say `exit` to end the session and see the stats.
 | `do you have a store in hyderabad` | AI fallback (with a key) |
 | `what's the weather today` | off-topic, escalated to human |
 | `the product arrived broken` then `this is the worst service, useless` | empathy, then priority handoff on repeated anger |
-| `exit` | session stats |
+| `నా ఆర్డర్ ఎక్కడ ఉంది` then `10234` | Telugu FAQ answer + order status in Telugu |
+| `mera refund kab aayega` | romanized Hindi, answered in Hindi |
+| `exit` | session stats (including languages used) |
 
 Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
 
@@ -122,6 +130,23 @@ python main.py --mode voice
 `mpg123` plays the neural voice, `libportaudio2` gives Python mic access, and
 `espeak-ng` is the offline fallback voice.
 
+## Telugu and Hindi
+
+All translated text lives in one file per language, `data/i18n/te.json` and
+`data/i18n/hi.json` - FAQ questions and answers, bot messages, order status
+wording, and word lists (yes/no/exit, anger words, filler words). A native
+speaker can improve wording there without touching code; the tests check
+every FAQ, message and order stays covered.
+
+- **Text mode** switches language automatically on every message.
+- **Voice mode** needs the language up front for speech recognition:
+  `--lang te` or `--lang hi`. Recognition and the Telugu/Hindi voices need
+  internet; offline, Telugu/Hindi replies are shown as text.
+- Matching ignores spelling variants that people and speech recognizers mix
+  up (రీఫండ్/రిఫండ్, कहाँ/कहां/कहा, ऑर्डर/आर्डर).
+- On Windows, use Windows Terminal (default on Windows 11) so Telugu script
+  renders; the old console may show boxes.
+
 ## Aria's voice
 
 Replies are spoken with Microsoft's Indian English neural voice **en-IN-NeerjaNeural** (via
@@ -143,10 +168,13 @@ data/orders.json       mock order table for order-number lookups
 nlu/matcher.py         stemming, spell correction, TF-IDF + fuzzy retrieval, content-word gate
 nlu/entities.py        order-number extraction and lookup
 nlu/sentiment.py       offline sentiment + anger detection
+nlu/language.py        language packs, per-message language detection, spelling folding
+nlu/indic_matcher.py   Telugu/Hindi FAQ matching (word + character n-gram TF-IDF)
+data/i18n/*.json       English / Telugu / Hindi text: FAQs, messages, orders, word lists
 dialogue/manager.py    confidence routing, context, clarification, stats
 ai/llm.py              Groq / Gemini / Claude fallback chain
 asr/speech_to_text.py  mic capture with end-of-speech detection + Google speech recognition
 tts/text_to_speech.py  neural voice via edge-tts, offline fallback via pyttsx3
 main.py                CLI
-tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback)
+tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback, multilingual)
 ```

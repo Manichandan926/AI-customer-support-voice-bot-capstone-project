@@ -53,13 +53,22 @@ class SentimentAnalyzer:
         vader = self._load_vader()
         return vader.polarity_scores(text)["compound"] if vader else 0.0
 
-    def analyze(self, text: str) -> Sentiment:
+    def analyze(self, text: str, pack=None) -> Sentiment:
         score = self._polarity(text)
         hits = len(_ANGER_RE.findall(text))
+        if pack is not None and pack.code != "en":
+            from nlu.language import normalize_any
+            norm = f" {normalize_any(text)} "
+            hits += sum(f" {w} " in norm for w in pack.words.get("anger", ()))
         # Shouting: several all-caps words or repeated "!!" / "??".
         shouting = sum(1 for w in text.split() if len(w) > 2 and w.isupper()) >= 2
         if shouting or re.search(r"[!?]{2,}", text):
             hits += 1
+        if pack is not None and pack.code != "en":
+            # VADER has no Telugu/Hindi vocabulary, so its score is ~0 here;
+            # the anger lexicon alone decides.
+            label = "angry" if hits >= 2 else "negative" if hits == 1 else "neutral"
+            return Sentiment(label, score, hits)
         if hits and score <= config.ANGRY_SCORE:
             label = "angry"
         elif score <= config.NEGATIVE_SCORE or hits:

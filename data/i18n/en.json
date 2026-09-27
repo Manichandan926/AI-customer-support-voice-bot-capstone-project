@@ -1,0 +1,34 @@
+{
+  "lang": "en",
+  "name": "English",
+  "asr_code": "en-IN",
+  "tts_voice": "en-IN-NeerjaNeural",
+  "messages": {
+    "greeting": "Hi, I'm Aria from ShopEase. How can I help you today?",
+    "hello": "Hello! I'm Aria, your ShopEase assistant. How can I help you today?",
+    "thanks": "You're welcome! Is there anything else I can help you with?",
+    "ack": "Great! Is there anything else I can help you with?",
+    "how_are_you": "I'm doing great, thanks for asking! What can I help you with?",
+    "who_are_you": "I'm Aria, an AI support assistant for ShopEase. I can help with orders, returns, refunds, payments, shipping and your account.",
+    "capabilities": "I can track orders, explain returns and refunds, help with payments and billing, shipping questions, and account issues. Just ask!",
+    "handoff": "Sure, I'm transferring you to a human agent now. Please stay on the line.",
+    "escalate": "I'm not sure about that one, so I'm connecting you to a human agent. You can also call us toll-free at 1800-123-4567.",
+    "goodbye": "Thanks for contacting ShopEase. Have a great day!",
+    "priority": "I can tell this has been really frustrating, and I'm sorry. I'm connecting you to a senior agent right away with priority, so you won't have to repeat yourself.",
+    "empathy_angry": "I'm really sorry for the trouble, and I want to get this sorted for you.",
+    "empathy_negative": "I'm sorry to hear that.",
+    "clarify": "Just to confirm, are you asking: \"{question}\"?",
+    "rephrase": "No problem. Could you rephrase your question, or say 'agent' to talk to a person?",
+    "not_heard": "Sorry, I didn't catch that. Could you say it again?",
+    "order_found": "Your order {id} ({item}) is {status}. {detail}",
+    "order_not_found": "I couldn't find an order with number {id}. Please check the number in your confirmation email and try again.",
+    "bad_order_number": "{digits} doesn't look like an order number. Order numbers are 5 digits, like 10234 - you'll find yours in the confirmation email.",
+    "no_ack": "Alright. Let me know if there's anything else I can help you with."
+  },
+  "apologetic_prefixes": [
+    "sorry",
+    "i'm sorry",
+    "don't worry",
+    "apolog"
+  ]
+}

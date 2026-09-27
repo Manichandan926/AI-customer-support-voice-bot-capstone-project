@@ -24,10 +24,10 @@ class TextToSpeech:
         self._edge_ok = config.TTS_ENGINE == "edge"
         self._pyttsx3 = None
 
-    def speak(self, text: str) -> None:
+    def speak(self, text: str, voice: str | None = None, lang: str = "en") -> None:
         if self._edge_ok:
             try:
-                self._speak_edge(text)
+                self._speak_edge(text, voice or config.TTS_VOICE)
                 return
             except Exception as e:
                 # Don't retry the neural voice every turn once it has failed;
@@ -35,10 +35,14 @@ class TextToSpeech:
                 self._edge_ok = False
                 print(f"  [tts] neural voice unavailable ({type(e).__name__}: {str(e)[:80]}); "
                       "using offline Windows voice", file=sys.stderr)
+        if lang != "en":
+            # The offline Windows/espeak voices can't pronounce Telugu or
+            # Hindi script, so say so instead of reading out garbage.
+            raise RuntimeError("the offline voice can't speak this language - reply shown as text only")
         self._speak_sapi(text)
 
     # ------------------------------------------------------------- neural voice
-    def _speak_edge(self, text: str) -> None:
+    def _speak_edge(self, text: str, voice_name: str) -> None:
         try:
             import edge_tts
         except ImportError:
@@ -46,7 +50,7 @@ class TextToSpeech:
         fd, path = tempfile.mkstemp(suffix=".mp3", prefix="aria_")
         os.close(fd)
         try:
-            voice = edge_tts.Communicate(text, config.TTS_VOICE, rate=config.TTS_NEURAL_RATE,
+            voice = edge_tts.Communicate(text, voice_name, rate=config.TTS_NEURAL_RATE,
                                          pitch=config.TTS_NEURAL_PITCH)
             asyncio.run(voice.save(path))
             _play_mp3(path)

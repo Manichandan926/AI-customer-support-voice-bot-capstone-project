@@ -32,6 +32,10 @@ fastembed + llama-cpp-python + Qwen GGUF, faster-whisper) was dropped in favour 
    (`asr.Endpointer`, pure logic, unit-tested) stops recording on silence.
 4. **Sentiment** (`nlu/sentiment.py`) - VADER + anger lexicon; empathy prefix
    on negative turns, priority escalation when frustration accumulates.
+5. **Multilingual** (`nlu/language.py`, `nlu/indic_matcher.py`, `data/i18n/`) -
+   English/Telugu/Hindi detected per message; all user-facing text lives in the
+   language packs, never in code. Telugu/Hindi matching is word + char n-gram
+   TF-IDF with spelling folding. Voice mode takes `--lang` for ASR.
 
 Must run on Windows and Linux, including a Raspberry Pi 5 (4GB) - keep
 everything light and cross-platform (Linux playback via mpg123 etc.).

@@ -36,6 +36,16 @@ FUZZY_WEIGHT = 0.25
 # "weather" -> "whether" style near-misses on unrelated words mostly don't.
 SPELL_MATCH = 80
 
+# Telugu / Hindi matcher: character n-grams carry more weight than whole words,
+# because Telugu attaches case endings to words (ఆర్డర్‌ను, ఆర్డర్‌కి).
+INDIC_WORD_WEIGHT = 0.4
+INDIC_CHAR_WEIGHT = 0.6
+INDIC_WORD_MATCH = 75      # fuzzy similarity (0-100) for a word to count as shared
+
+# Language: "auto" detects each message (English / Telugu / Hindi, including
+# romanized Telugu/Hindi). Voice mode needs a fixed language for recognition.
+DEFAULT_LANGUAGE = os.getenv("BOT_LANGUAGE", "en")
+
 # --- Sentiment ---------------------------------------------------------------
 # VADER compound score bands (-1..1). "angry" additionally needs an anger
 # word or shouting, so a plain complaint ("it arrived broken") stays "negative".
