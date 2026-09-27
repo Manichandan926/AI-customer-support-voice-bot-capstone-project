@@ -1,132 +1,126 @@
-# AI Customer Support Voice Bot — Text Prototype
+﻿# AI Customer Support Voice Bot
 
-A basic-level, console-based prototype of the AI Customer Support
-Voice Bot's core logic. This simulates the pipeline using keyboard
-input instead of live audio, so the team can demonstrate and refine
-the decision-making logic (intent classification, response
-generation, escalation) before the real ASR/NLU/TTS models are
-integrated on the Orange Pi 5 hardware.
+Capstone Project 15 - a conversational support assistant ("Aria" for the
+fictional store *ShopEase*) that handles customer queries by text or voice,
+instead of a traditional IVR menu.
 
-## Why it's structured this way
+Runs on a plain CPU laptop (tested target: Intel i3, 8 GB RAM, Windows 11).
+No GPU, no local ML models, no multi-GB downloads.
 
-The real system's pipeline is:
+## How it works
 
 ```
-Speech Input -> Speech-to-Text (ASR) -> Intent Classification ->
-Response Generation -> Text-to-Speech -> Spoken Output
+ voice ──> Google Speech Recognition ──┐
+                                       v
+ text ──────────────────────────> Dialogue Manager ──> reply ──> neural voice (Neerja, Indian English)
+                                                                  (offline fallback: Windows Zira)
+                                       │
+       1. exit / yes-no to a pending "did you mean?"
+       2. small talk, "talk to a human"
+       3. order number?  ──> order lookup ("order 10234 is shipped...")
+       4. FAQ matcher (stemming + spell correction + TF-IDF + fuzzy, context-aware)
+            score >= 0.55 ──> answer instantly
+            0.35 - 0.55   ──> "Just to confirm, are you asking ...?"
+            below 0.35    ──> AI fallback (Groq -> Gemini -> Claude)
+                                 grounded on the FAQ knowledge base
+                                 no answer / no keys ──> escalate to human
 ```
 
-This prototype implements the same four stages as separate,
-swappable modules:
+- **Smart rule engine** answers most questions in about 1-5 ms, fully offline:
+  tolerant of typos ("pasword", "refnd"), contractions and rephrasing, with a
+  content-word gate so off-topic questions ("what's the weather?") are never
+  mistaken for FAQ matches.
+- **Context memory**: follow-ups like "how long does that take?" after a
+  returns question resolve to the refund timeline.
+- **AI fallback** handles questions the FAQ list doesn't phrase directly. The
+  LLM sees only the FAQ content and must reply `ESCALATE` if the answer
+  isn't there, so it can't make up policies.
+- **Session stats** (turns, answered, AI-answered, clarified, escalated,
+  average latency) print when the session ends.
 
-| Stage | Prototype implementation | Real implementation (later) |
-|---|---|---|
-| Input | `voicebot/input/console_input.py` — keyboard text | ASR (e.g. whisper.cpp) |
-| NLU | `voicebot/nlu/intent_classifier.py` — keyword matching | Fine-tuned classifier (e.g. DistilBERT/ONNX) |
-| Dialogue | `voicebot/dialogue/response_generator.py` — canned responses + escalation rule | LLM or retrieval-augmented response generation |
-| Output | `voicebot/output/console_output.py` — console print | TTS (e.g. piper-tts) |
+## Setup
 
-`voicebot/pipeline.py` wires these four stages together. To upgrade
-any one stage later, write a new class with the same interface
-(e.g. a class with a `.listen()` method for input, or a `.classify()`
-method for NLU) and pass it into `VoiceBotPipeline(...)` — the other
-three stages and the orchestration logic do not need to change.
-
-## Project structure
-
-```
-voicebot/
-├── __init__.py
-├── pipeline.py                  # orchestrates all 4 stages
-├── input/
-│   └── console_input.py         # mocked ASR (keyboard input)
-├── nlu/
-│   └── intent_classifier.py     # rule-based intent matching
-├── dialogue/
-│   └── response_generator.py    # canned responses + escalation logic
-└── output/
-    └── console_output.py        # mocked TTS (console print)
-tests/
-└── test_pipeline.py             # unit tests for NLU + dialogue stages
-```
-
-## Running it
-
-Requires Python 3.8+.
-
-For the default lightweight setup (recommended for 8 GB laptops), install only the core dependencies:
-
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python3 -m voicebot.pipeline
+copy .env.example .env      # then paste in any API keys you have (all optional)
 ```
 
-If you want the optional Groq-backed AI response generator, install the LLM extras instead:
+API keys (any subset works, none is required):
 
-```bash
-pip install -r requirements-llm.txt
-export GROQ_API_KEY="your_key_here"
+| Provider | Cost | Get a key |
+|---|---|---|
+| Groq (Llama 3.3 70B) | free tier | https://console.groq.com/keys |
+| Google Gemini | free tier | https://aistudio.google.com/apikey |
+| Anthropic Claude | paid per use | https://console.anthropic.com/ |
+
+## Run
+
+```powershell
+python main.py                      # text chat
+python main.py --mode voice         # press Enter, speak for 5 s, hear the reply
+python main.py --speak              # type questions, hear replies
+python main.py --no-ai              # rule engine only, fully offline
+pytest tests/ -v                    # unit tests (no network needed)
 ```
 
-Example session:
+Type or say `exit` to end the session and see the stats.
+
+### Demo script
+
+| You say | What it shows |
+|---|---|
+| `hi` | small talk |
+| `how do I reset my password` | confident FAQ answer |
+| `i forgot my pasword` | typo tolerance |
+| `where is my order 10567` | order-number extraction + lookup |
+| `how do I return an item` then `how long does that take` | context memory |
+| `my package was left open` then `yes` | clarify-then-confirm |
+| `track order` then `10234` | asks for, then looks up, the order number |
+| `do you have a store in hyderabad` | AI fallback (with a key) |
+| `what's the weather today` | off-topic, escalated to human |
+| `exit` | session stats |
+
+Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
+
+## Troubleshooting
+
+- **No audio / COM error from pyttsx3**: pywin32's post-install step sometimes
+  doesn't run under modern pip. Fix with:
+  `python venv\Scripts\pywin32_postinstall.py -install`
+- **"Couldn't record from the microphone"**: check Windows Settings > Privacy &
+  security > Microphone, and that desktop apps are allowed to use it.
+- **"Google speech service unreachable"**: voice recognition needs internet.
+  You can still type in voice mode - the reply will be spoken.
+- **AI fallback shows "off"**: no keys found. Check `.env` is in the project
+  folder and the variable names match `.env.example`.
+- **Wrong accent recognition**: set `ASR_LANGUAGE` in `.env` (default `en-IN`).
+
+## Aria's voice
+
+Replies are spoken with Microsoft's Indian English neural voice **en-IN-NeerjaNeural** (via
+`edge-tts`: free, no key, about 1 s to generate a reply, needs internet). If
+it's unreachable, the bot switches to Windows' offline female voice (Zira)
+automatically. To change it, set these in `.env`:
 
 ```
-AI Customer Support Voice Bot (text prototype)
-Type your query below. Type 'exit' to quit.
-
-You: I forgot my password and can't log in
-Bot: I can help with account issues. To reset your password or unlock
-your account, please visit the 'Account Settings' page, or I can
-connect you to an agent for identity verification.
-
-You: asdkjaslkdj random gibberish
-Bot: I want to make sure you get the right help here — let me connect
-you with a human agent for this one. [ESCALATED]
-
-You: exit
-Bot: Thanks for reaching out. Goodbye!
+TTS_VOICE=en-US-AriaNeural     # or en-US-JennyNeural, en-GB-SoniaNeural
+TTS_ENGINE=sapi                # force the offline voice
 ```
 
-## Running the tests
+## Project layout
 
-```bash
-python3 -m unittest discover -v
 ```
-
-## Keeping the repo safe and contributor-friendly
-
-This project is designed to stay lightweight and merge-safe:
-
-- The default install is intentionally small to avoid heavy memory usage on 8 GB laptops.
-- The Groq dependency is optional and lives in `requirements-llm.txt`, so contributors do not need a large AI stack just to run the core prototype.
-- A Git pre-commit hook runs the test suite before a commit succeeds.
-- GitHub CI runs the same tests on push and pull requests to `main`.
-
-Install the commit hook once per clone:
-
-```bash
-./scripts/install_hooks.sh
+config.py              thresholds, model names, voice settings
+data/faq_data.json     40 FAQ entries (orders, shipping, returns, refunds, billing, account)
+data/orders.json       mock order table for order-number lookups
+nlu/matcher.py         stemming, spell correction, TF-IDF + fuzzy retrieval, content-word gate
+nlu/entities.py        order-number extraction and lookup
+dialogue/manager.py    confidence routing, context, clarification, stats
+ai/llm.py              Groq / Gemini / Claude fallback chain
+asr/speech_to_text.py  microphone capture + Google speech recognition
+tts/text_to_speech.py  neural voice via edge-tts, offline fallback via pyttsx3
+main.py                CLI
+tests/test_matcher.py  unit tests
 ```
-
-For contribution rules and branch expectations, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Supported intents (current prototype scope)
-
-- `account_issue` — login, password, account access
-- `technical_support` — errors, crashes, setup/connection problems
-- `billing_inquiry` — invoices, charges, refunds, subscriptions
-- `order_status` — shipment/delivery tracking
-- `general_inquiry` — fallback for anything unmatched
-
-Queries the classifier is not confident about are escalated to a
-human agent rather than answered with a guess, matching the
-escalation design in the project's system architecture.
-
-## Next steps (planned upgrades)
-
-- Replace `console_input.py` with a real ASR module.
-- Replace `intent_classifier.py` with a trained NLU model.
-- Expand `response_generator.py` beyond canned responses (e.g. RAG).
-- Replace `console_output.py` with a real TTS module.

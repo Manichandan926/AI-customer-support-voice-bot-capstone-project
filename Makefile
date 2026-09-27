@@ -3,7 +3,7 @@ PYTHON ?= python3
 .PHONY: test hooks
 
 test:
-	$(PYTHON) -m unittest discover -v
+	$(PYTHON) -m pytest tests -v
 
 hooks:
 	./scripts/install_hooks.sh

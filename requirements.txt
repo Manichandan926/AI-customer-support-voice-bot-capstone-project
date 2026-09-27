@@ -1,10 +1,21 @@
-# Core dependencies kept intentionally lightweight for local development on
-# laptops with limited memory.
-python-dotenv>=1.0.0
+# Everything here is CPU-only and pure/light - no torch, no model downloads.
 
-# When real ASR/NLU/TTS modules are added, pin their versions here, e.g.:
-# openai-whisper==...
-# onnxruntime==...
-# piper-tts==...
+# Rule engine
+scikit-learn
+rapidfuzz
 
-# Optional AI response support is installed separately via requirements-llm.txt.
+# Voice (only imported in --mode voice / --speak)
+SpeechRecognition
+sounddevice
+numpy
+pyttsx3
+edge-tts          # neural "Aria" voice (online); pyttsx3 is the offline fallback
+
+# AI fallback - install all three, then set whichever API keys you have in .env
+groq
+google-genai
+anthropic
+python-dotenv
+
+# Tests
+pytest
