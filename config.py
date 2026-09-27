@@ -1,4 +1,4 @@
-"""All tunables in one place, so thresholds and model names can be adjusted
+﻿"""All tunables in one place, so thresholds and model names can be adjusted
 for the demo without touching engine code."""
 
 import os
@@ -76,7 +76,7 @@ VAD_CALIBRATE = 0.5        # then measure room noise before listening
 VAD_NOISE_FACTOR = 2.5     # speech must be this many times louder than room noise (75th pct)
 VAD_MIN_SPEECH = 0.15      # sustained loudness needed to count as speech starting
 VAD_END_SILENCE = 0.9      # this much quiet after speech ends the utterance
-VAD_START_TIMEOUT = 7.0    # give up if nobody starts speaking
+VAD_START_TIMEOUT = 10.0   # give up if nobody starts speaking (people pause before talking)
 VAD_MAX_SECONDS = 10.0     # hard cap on one utterance
 VAD_PREROLL = 0.3          # audio kept from just before speech was detected
 

@@ -175,5 +175,37 @@ def _mic_check() -> None:
     print(f"  transcript: {stt.transcribe_samples(samples)!r}")
 
 
+def _level_meter(seconds: float = 8.0) -> None:
+    """python -m asr.speech_to_text --levels  - records a fixed window, draws
+    the loudness over time, and recommends VAD_NOISE_FACTOR for this mic."""
+    import numpy as np
+    import sounddevice as sd
+    print(f"Stay quiet for 2 seconds, then say 'where is my order' at normal volume. Recording {seconds:.0f}s...")
+    x = sd.rec(int(seconds * config.SAMPLE_RATE), samplerate=config.SAMPLE_RATE, channels=1, dtype="int16")
+    sd.wait()
+    x = x[:, 0].astype(np.float32)
+    block = int(config.SAMPLE_RATE * FRAME_SECONDS)
+    levels = [float(np.sqrt(np.mean(x[i:i + block] ** 2))) for i in range(0, len(x) - block, block)]
+    skip = int(config.VAD_WARMUP / FRAME_SECONDS)
+    quiet = levels[skip:int(2.0 / FRAME_SECONDS)]
+    noise = noise_level(quiet)
+    speech = float(np.percentile(levels[int(2.0 / FRAME_SECONDS):], 90))
+    step = int(0.25 / FRAME_SECONDS)
+    peak = max(levels) or 1
+    for i in range(0, len(levels), step):
+        lvl = max(levels[i:i + step])
+        print(f"  {i * FRAME_SECONDS:4.1f}s {lvl:6.0f} {'#' * int(40 * lvl / peak)}")
+    print(f"\n  room noise ~{noise:.0f}, your speech ~{speech:.0f} (ratio {speech / max(noise, 1):.1f}x)")
+    ratio = speech / max(noise, 1)
+    if ratio < 1.6:
+        print("  Speech is barely louder than the room. Move closer to the mic, or raise the mic volume:\n"
+              "  Windows: Settings > System > Sound > Input > Microphone > Input volume (and Microphone Boost).")
+    else:
+        # Threshold halfway (geometrically) between room noise and speech.
+        print(f"  Recommended: VAD_NOISE_FACTOR = {max(1.3, min(3.5, ratio ** 0.5)):.1f} in config.py "
+              f"(currently {config.VAD_NOISE_FACTOR})")
+
+
 if __name__ == "__main__":
-    _mic_check()
+    import sys
+    _level_meter() if "--levels" in sys.argv else _mic_check()
