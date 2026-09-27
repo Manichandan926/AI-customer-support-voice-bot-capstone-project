@@ -13,6 +13,9 @@ import time
 import config
 
 _state = {"checked_at": float("-inf"), "online": False}
+# Module-level handle so tests can simulate connectivity without replacing
+# socket.create_connection for everything else (urllib, HTTP servers).
+_connect = socket.create_connection
 
 
 def is_online(force: bool = False) -> bool:
@@ -21,7 +24,7 @@ def is_online(force: bool = False) -> bool:
     if not force and time.monotonic() - _state["checked_at"] < config.NET_CHECK_TTL:
         return _state["online"]
     try:
-        socket.create_connection((config.NET_CHECK_HOST, 443), timeout=config.NET_CHECK_TIMEOUT).close()
+        _connect((config.NET_CHECK_HOST, 443), timeout=config.NET_CHECK_TIMEOUT).close()
         online = True
     except OSError:
         online = False

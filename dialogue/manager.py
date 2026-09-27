@@ -223,13 +223,22 @@ class DialogueManager:
         """Low confidence: let the AI try with the full FAQ as its knowledge
         base; escalate if it's unavailable or says the FAQ doesn't cover it."""
         if self.ai is not None and self.ai.available:
-            reply, provider = self.ai.answer(query, self.matcher.faqs, self._history, language=pack.name)
+            knowledge, relevant = self._ranked_knowledge(query, pack.code)
+            reply, provider = self.ai.answer(query, knowledge, self._history,
+                                             language=pack.name, relevant=relevant)
             if reply:
                 return Turn(query, reply, "ai", score, f"ai:{provider}")
             return Turn(query, pack.msg("escalate"), "escalate", score, f"ai:{provider}" if provider else "")
         if rejected:
             return Turn(query, pack.msg("rephrase"), "clarify", score)
         return Turn(query, pack.msg("escalate"), "escalate", score)
+
+    def _ranked_knowledge(self, query: str, lang: str) -> tuple[list[dict], int]:
+        """All FAQs, most relevant to this question first, plus how many of
+        them actually matched. A local model only reads the top few."""
+        matched = [m.faq for m in self.matcher_for(lang).match(query, top_k=len(self.matcher.faqs))]
+        seen = {f["id"] for f in matched}
+        return matched + [f for f in self.matcher.faqs if f["id"] not in seen], len(matched)
 
     def _try_order(self, query: str, norm: str, pack: LanguagePack) -> Turn | None:
         order_id = extract_order_id(query)

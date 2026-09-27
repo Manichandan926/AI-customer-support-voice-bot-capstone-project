@@ -39,7 +39,7 @@ def set_online(monkeypatch, online: bool):
             def close(self): pass
         return Conn()
 
-    monkeypatch.setattr(network.socket, "create_connection", fake_connect)
+    monkeypatch.setattr(network, "_connect", fake_connect)
     return calls
 
 

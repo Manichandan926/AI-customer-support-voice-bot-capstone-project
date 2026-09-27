@@ -5,6 +5,7 @@
   python main.py --speak             text input, spoken output
   python main.py --no-ai             rule engine only (no cloud AI)
   python main.py --offline           never use the internet: offline speech + voices
+  python main.py --hands-free        voice without pressing Enter (standalone device)
   python main.py --lang te           start in Telugu (te) or Hindi (hi); text mode
                                      also switches language per message automatically
 """
@@ -35,11 +36,11 @@ ACTION_COLOR = {"answer": GREEN, "order": GREEN, "ai": CYAN, "smalltalk": GREEN,
                 "clarify": YELLOW, "escalate": RED, "exit": DIM}
 
 
-def build_bot(use_ai: bool, language: str) -> DialogueManager:
+def build_bot(use_ai: bool, language: str, local_only: bool = False) -> DialogueManager:
     ai = None
     if use_ai:
         from ai.llm import LLMAssistant
-        ai = LLMAssistant()
+        ai = LLMAssistant(local_only=local_only)
         if not ai.providers:
             ai = None
     return DialogueManager(ai=ai, language=language)
@@ -51,7 +52,7 @@ def voice_for(lang: str) -> str:
 
 
 def print_banner(bot: DialogueManager, mode: str, uses_voice: bool) -> None:
-    ai = ", ".join(bot.ai.available) if bot.ai else "off (rule engine only)"
+    ai = bot.ai.describe() if bot.ai else "off (rule engine only)"
     print(f"{BOLD}{config.COMPANY_NAME} Customer Support - {config.BOT_NAME}{RESET}")
     print(f"{DIM}mode: {mode} | language: {load_pack(bot.lang).name} (auto-detect: English, Telugu, Hindi)"
           f" | FAQs: {len(bot.matcher.faqs)} | AI fallback: {ai}")
@@ -88,10 +89,11 @@ def print_stats(stats: dict) -> None:
         print(f"  {k:<15} {v}")
 
 
-def get_voice_query(stt) -> str | None:
-    typed = input(f"{DIM}[Enter] then speak, or type:{RESET} ").strip()
-    if typed:
-        return typed
+def get_voice_query(stt, hands_free: bool = False) -> str | None:
+    if not hands_free:
+        typed = input(f"{DIM}[Enter] then speak, or type:{RESET} ").strip()
+        if typed:
+            return typed
     print(f"{CYAN}  Listening... (I'll stop when you stop talking){RESET}")
     try:
         text = stt.listen(on_speech_start=lambda: print(f"{CYAN}  Hearing you...{RESET}"))
@@ -99,7 +101,8 @@ def get_voice_query(stt) -> str | None:
         print(f"{RED}  {e}{RESET}")
         return None
     if not text:
-        print(f"{YELLOW}  Didn't catch that - please try again.{RESET}")
+        if not hands_free:  # hands-free just keeps listening; silence isn't an error there
+            print(f"{YELLOW}  Didn't catch that - please try again.{RESET}")
         return None
     engine = " offline" if stt.last_engine == "vosk" else ""
     print(f"{BOLD}You (voice{engine}):{RESET} {text}")
@@ -114,12 +117,17 @@ def main() -> None:
     parser.add_argument("--lang", choices=SUPPORTED, default=config.DEFAULT_LANGUAGE,
                         help="starting language; voice mode listens in this language")
     parser.add_argument("--offline", action="store_true",
-                        help="never use the internet (offline speech recognition and voices, no cloud AI)")
+                        help="never use the internet (offline speech and voices; only a local AI model)")
+    parser.add_argument("--hands-free", action="store_true",
+                        help="voice mode without pressing Enter: keeps listening (for a standalone device)")
     args = parser.parse_args()
+    if args.hands_free:
+        args.mode = "voice"
     if args.offline:
         config.OFFLINE_MODE = "always"
 
-    bot = build_bot(use_ai=not (args.no_ai or args.offline), language=args.lang)
+    # Offline still allows the local model (Ollama) - it never leaves the machine.
+    bot = build_bot(use_ai=not args.no_ai, language=args.lang, local_only=args.offline)
 
     # Voice libraries are imported only when needed so text mode starts instantly.
     stt = tts = None
@@ -149,7 +157,7 @@ def main() -> None:
     try:
         while True:
             if stt:
-                query = get_voice_query(stt)
+                query = get_voice_query(stt, hands_free=args.hands_free)
                 if query is None:
                     continue
             else:

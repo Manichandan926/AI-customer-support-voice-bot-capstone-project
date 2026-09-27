@@ -88,8 +88,25 @@ def stem(word: str) -> str:
     return word
 
 
+# Customers and the FAQ often use different words for the same thing. Both
+# sides are mapped to one canonical (stemmed) word, so "delivery charge"
+# meets "shipping cost" and "shipment" meets "package". Kept deliberately
+# small and domain-specific: a broad thesaurus would blur distinct FAQs.
+SYNONYMS = {
+    "ship": "deliver", "courier": "deliver",
+    "shipment": "package", "parcel": "package", "consignment": "package",
+    "abroad": "international", "overseas": "international", "foreign": "international",
+    "charge": "cost", "fee": "cost",
+    "crack": "broken", "smash": "broken", "shatter": "broken",
+    "bill": "invoice", "receipt": "invoice",
+    "swap": "exchange", "replace": "exchange",
+    "cellphone": "phone", "mobile": "phone",
+}
+
+
 def content_words(text: str) -> list[str]:
-    return [stem(w) for w in normalize(text).split() if w not in STOP_WORDS and len(w) > 1]
+    words = (stem(w) for w in normalize(text).split() if w not in STOP_WORDS and len(w) > 1)
+    return [SYNONYMS.get(w, w) for w in words]
 
 
 @dataclass
@@ -132,12 +149,16 @@ class FAQMatcher:
         self._matrix = self._vec.fit_transform(self._phrasings)
 
     def correct(self, words: list[str]) -> list[str]:
-        """Snap unknown words to the FAQ vocabulary; short words are left alone
-        because a 3-letter edit is too ambiguous to guess."""
+        """Snap unknown words to the FAQ vocabulary. Short words are left
+        alone (a 3-letter edit is too ambiguous to guess), and a correction
+        must keep the first letter: real typos rarely change it ("ordr" ->
+        order), while unrelated words often differ only there ("rice" is not
+        a misspelled "price")."""
         out = []
         for w in words:
             if w not in self._known and len(w) > 3:
-                w = _closest(w, self._vocab) or w
+                candidates = [v for v in self._vocab if v[0] == w[0]]
+                w = _closest(w, candidates) or w
             out.append(w)
         return out
 

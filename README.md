@@ -21,7 +21,7 @@ No GPU, no local ML models, no multi-GB downloads.
        4. FAQ matcher (stemming + spell correction + TF-IDF + fuzzy, context-aware)
             score >= 0.55 ──> answer instantly
             0.35 - 0.55   ──> "Just to confirm, are you asking ...?"
-            below 0.35    ──> AI fallback (Groq -> Gemini -> Claude)
+            below 0.35    ──> AI fallback (local Ollama -> Groq -> Gemini -> Claude)
                                  grounded on the FAQ knowledge base
                                  no answer / no keys ──> escalate to human
 ```
@@ -34,7 +34,9 @@ No GPU, no local ML models, no multi-GB downloads.
   returns question resolve to the refund timeline.
 - **AI fallback** handles questions the FAQ list doesn't phrase directly. The
   LLM sees only the FAQ content and must reply `ESCALATE` if the answer
-  isn't there, so it can't make up policies.
+  isn't there, so it can't make up policies. A **local model** (Ollama,
+  qwen2.5:1.5b, CPU-only, ~1 GB) is used first when installed - no API key,
+  works offline, fits a 4 GB Raspberry Pi - then any cloud API keys.
 - **English, Telugu and Hindi**: the language is detected per message
   (script, or common romanized words like "naa order ekkada undi" / "mera
   order kahan hai") and the whole reply - FAQ answers, order status,
@@ -80,6 +82,8 @@ python main.py --mode voice --lang te   # listen and reply in Telugu (hi = Hindi
 python main.py --mode voice --offline   # force offline speech + voices (no internet used)
 pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
 python -m asr.speech_to_text        # mic check: shows noise level, threshold, transcript
+python -m tools.evaluate            # accuracy on 105 held-out questions (see docs/evaluation.md)
+python main.py --hands-free         # voice without pressing Enter (standalone device)
 ```
 
 Type or say `exit` to end the session and see the stats.
@@ -123,7 +127,21 @@ Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
 
 ## Linux / Raspberry Pi
 
-Same code, plus a few system packages for audio:
+One command on a Raspberry Pi 5 (Raspberry Pi OS 64-bit) or any Debian/Ubuntu:
+
+```bash
+bash scripts/setup_pi.sh              # packages, venv, requirements, self-test
+bash scripts/setup_pi.sh --all te     # + offline models, local AI, start hands-free in Telugu at boot
+```
+
+It installs the audio packages, creates the venv, runs the tests and the
+evaluation, and optionally downloads offline models (`--models`), installs
+Ollama with a model sized to the RAM (`--llm`), and registers a systemd
+service that starts Aria hands-free at boot (`--service en|te|hi`; each
+"bye" ends a customer session and the next one starts fresh).
+
+Memory budget on a 4 GB Pi 5: bot ~150 MB, offline models ~250 MB, local
+model ~1.1 GB - under 2 GB in total. Manual install, if preferred:
 
 ```bash
 sudo apt install -y python3-venv libportaudio2 mpg123 espeak-ng
@@ -135,6 +153,40 @@ python main.py --mode voice
 `mpg123` plays the neural voice, `libportaudio2` gives Python mic access, and
 `espeak-ng` is the last-resort offline voice. For proper offline voices and
 speech recognition, also run `python -m tools.download_models`.
+
+## Measured accuracy
+
+`python -m tools.evaluate` runs 105 **held-out** questions - phrased
+differently from anything in the FAQ data, so it measures generalization,
+not memorization - through the rule engine alone (no AI, offline):
+
+| | Overall | English | Telugu | Hindi |
+|---|---|---|---|---|
+| resolved (answered, or confirmed via "did you mean?") | 88% | 82% | 100% | 100% |
+| answer precision (right when it answers) | 89% | 83% | 100% | 100% |
+| off-topic questions correctly handed off | 92% | 88% | 100% | 100% |
+| language detected correctly | 100% | 100% | 100% | 100% |
+| average reply time | 5 ms | 1.4 ms | 13 ms | 11 ms |
+
+The remaining English misses need understanding of meaning ("do I have to
+*pay for* delivery" vs "shipping *cost*"), which is what the AI fallback is
+for; run `python -m tools.evaluate --with-ai` with Ollama installed to
+measure it. A test (`tests/test_evaluation.py`) fails if accuracy ever
+drops below these levels. Full list of misses: `docs/evaluation.md`.
+
+## Local AI (optional, no API key)
+
+```bash
+# install Ollama from https://ollama.com, then:
+ollama pull qwen2.5:1.5b      # ~1 GB download, ~1.1 GB RAM while running
+python main.py                # the banner shows "AI fallback: ollama (qwen2.5:1.5b)"
+```
+
+Detected automatically - without Ollama the bot behaves exactly as before.
+Runs on the CPU (a few seconds per answer on a laptop, longer on a Pi), so
+it only sees the 6 most relevant FAQs rather than all 40: reading the
+prompt is the slow part on a CPU. It answers English and Hindi; Telugu is
+beyond a model this size, so Telugu questions go to cloud AI or a human.
 
 ## Offline mode
 
@@ -206,6 +258,9 @@ tts/offline_tts.py     Piper offline neural voices
 asr/offline_asr.py     Vosk offline speech recognition (+ Telugu FAQ grammar)
 network.py             cached connectivity check that drives online/offline switching
 tools/download_models.py  one-time offline model download
+tools/evaluate.py      accuracy report on data/eval/test_set.json (held-out questions)
+scripts/setup_pi.sh    Raspberry Pi / Linux setup, optional autostart service
+docs/evaluation.md     latest evaluation report
 main.py                CLI
 tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback, multilingual)
 ```

@@ -40,6 +40,16 @@ fastembed + llama-cpp-python + Qwen GGUF, faster-whisper) was dropped in favour 
    `OFFLINE_MODE` auto/always/never. ASR: Google -> Vosk; TTS: edge-tts -> Piper
    -> pyttsx3 (English only). Models in `models/` (git-ignored), fetched by
    `python -m tools.download_models`. Piper's `use_cuda` stays off.
+7. **Local AI** (`ai/llm.py` OllamaProvider) - first in AI_PROVIDER_ORDER,
+   auto-detected via Ollama's localhost API (stdlib urllib, no SDK); gets only
+   the top OLLAMA_MAX_FAQS ranked FAQs; skipped for Telugu and when nothing
+   matched. `--offline` keeps local AI, drops cloud.
+8. **Evaluation** (`tools/evaluate.py`, `data/eval/test_set.json`) - held-out
+   phrasings; never copy test questions into FAQ data (that would fake the
+   score). `tests/test_evaluation.py` guards the measured accuracy floor.
+
+Tests: `tests/conftest.py` simulates connectivity via `network._connect`;
+never patch `socket.create_connection` globally (it breaks urllib).
 
 Must run on Windows and Linux, including a Raspberry Pi 5 (4GB) - keep
 everything light and cross-platform (Linux playback via mpg123 etc.).

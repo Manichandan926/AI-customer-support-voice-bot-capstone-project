@@ -58,8 +58,20 @@ POSITIVE_SCORE = 0.3
 FRUSTRATION_ESCALATE = 3
 
 # --- AI fallback (cloud LLMs, optional) ------------------------------------
-# Tried in this order; providers without an API key are skipped silently.
-AI_PROVIDER_ORDER = ["groq", "gemini", "claude"]
+# Tried in this order; providers that aren't set up (Ollama not running, no
+# API key) are skipped silently. The local model goes first: free and private.
+AI_PROVIDER_ORDER = ["ollama", "groq", "gemini", "claude"]
+
+# Local model via Ollama (optional): `ollama pull qwen2.5:1.5b` (~1 GB, runs on
+# a CPU; ~1.1 GB RAM). Sized for a 4 GB Raspberry Pi 5; qwen2.5:0.5b is faster,
+# qwen2.5:3b smarter if there's RAM to spare.
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
+OLLAMA_MAX_FAQS = 6         # prompt reading dominates CPU latency, so send only the top matches
+OLLAMA_NUM_CTX = 2048       # context window; smaller means less RAM
+OLLAMA_TIMEOUT = 90         # seconds; a Pi is slow but shouldn't hang forever
+OLLAMA_KEEP_ALIVE = "30m"   # keep the model loaded between questions
+OLLAMA_LANGUAGES = ("English", "Hindi")  # a 1.5B model's Telugu is too weak to trust
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
