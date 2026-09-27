@@ -27,7 +27,7 @@ the core starts in ~0.1 s, uses ~31 MB of RAM and answers in ~1 ms.
                                  no answer / no keys ──> escalate to human
 ```
 
-- **Smart rule engine** answers most questions in about 1-5 ms, fully offline:
+- **Smart rule engine** answers most questions in about 1 ms, fully offline:
   tolerant of typos ("pasword", "refnd"), contractions and rephrasing, with a
   content-word gate so off-topic questions ("what's the weather?") are never
   mistaken for FAQ matches.
@@ -57,6 +57,10 @@ the core starts in ~0.1 s, uses ~31 MB of RAM and answers in ~1 ms.
 
 ## Setup
 
+Needs Python 3.10 or newer. No GPU, no API keys.
+
+### Windows (PowerShell)
+
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
@@ -64,10 +68,32 @@ pip install -r requirements.txt
 copy .env.example .env      # optional settings
 ```
 
-Optional cloud AI (only if you'll add API keys; not needed otherwise):
+If `Activate.ps1` is blocked, run this once in the same window first:
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned`
 
-```powershell
-pip install -r requirements-cloud.txt
+Audio needs nothing extra on Windows. Use **Windows Terminal** (the default
+on Windows 11) so Telugu and Hindi text displays correctly.
+
+### Linux (Ubuntu, Debian, Raspberry Pi OS)
+
+```bash
+sudo apt install -y python3-venv libportaudio2 mpg123 espeak-ng
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # optional settings
+```
+
+`libportaudio2` gives Python access to the microphone, `mpg123` plays the
+neural voice, and `espeak-ng` is the last-resort offline voice. Or do all
+of this in one step with `bash scripts/setup_pi.sh` (see
+[Raspberry Pi](#raspberry-pi-standalone-device) - it works on any Debian/Ubuntu).
+
+### Optional extras (both systems)
+
+```bash
+python -m tools.download_models     # offline speech + voices (~330 MB), see Offline mode
+pip install -r requirements-cloud.txt   # only if you'll add cloud AI API keys
 ```
 
 API keys (any subset works, none is required):
@@ -84,7 +110,7 @@ API keys (any subset works, none is required):
 python main.py                      # text chat
 python main.py --mode voice         # press Enter, speak; it stops when you stop
 python main.py --speak              # type questions, hear replies
-python main.py --no-ai              # rule engine only, fully offline
+python main.py --no-ai              # rule engine only (no AI fallback)
 python main.py --mode voice --lang te   # listen and reply in Telugu (hi = Hindi)
 python main.py --mode voice --offline   # force offline speech + voices (no internet used)
 pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
@@ -94,7 +120,9 @@ python -m tools.demo                # scripted showcase of every feature (see do
 python main.py --hands-free         # voice without pressing Enter (standalone device)
 ```
 
-Type or say `exit` to end the session and see the stats.
+The commands are the same on Windows and Linux once the virtual environment
+is activated (on Linux, `python` inside the venv is Python 3; outside it,
+use `python3`). Type or say `exit` to end the session and see the stats.
 
 ### Demo script
 
@@ -121,8 +149,13 @@ Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
 - **No audio / COM error from pyttsx3**: pywin32's post-install step sometimes
   doesn't run under modern pip. Fix with:
   `python venv\Scripts\pywin32_postinstall.py -install`
-- **"Couldn't record from the microphone"**: check Windows Settings > Privacy &
-  security > Microphone, and that desktop apps are allowed to use it.
+- **"Couldn't record from the microphone"**: on Windows, check Settings >
+  Privacy & security > Microphone, and that desktop apps are allowed to use
+  it. On Linux, check the mic is listed by `arecord -l`, that `libportaudio2`
+  is installed, and that your user is in the `audio` group
+  (`sudo usermod -aG audio $USER`, then log out and back in).
+- **No sound on Linux**: install `mpg123` (`sudo apt install mpg123`) and check
+  the output device with `aplay -l`.
 - **"Google speech service unreachable"**: voice recognition needs internet.
   You can still type in voice mode - the reply will be spoken.
 - **AI fallback shows "off"**: no keys found. Check `.env` is in the project
@@ -133,7 +166,7 @@ Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
   speech level. In a noisy room raise `VAD_NOISE_FACTOR` in `config.py`; if it
   misses quiet speech, lower it.
 
-## Linux / Raspberry Pi
+## Raspberry Pi (standalone device)
 
 One command on a Raspberry Pi 5 (Raspberry Pi OS 64-bit) or any Debian/Ubuntu:
 
@@ -148,19 +181,9 @@ Ollama with a model sized to the RAM (`--llm`), and registers a systemd
 service that starts Aria hands-free at boot (`--service en|te|hi`; each
 "bye" ends a customer session and the next one starts fresh).
 
-Memory budget on a 4 GB Pi 5: bot ~150 MB, offline models ~250 MB, local
-model ~1.1 GB - under 2 GB in total. Manual install, if preferred:
-
-```bash
-sudo apt install -y python3-venv libportaudio2 mpg123 espeak-ng
-python3 -m venv venv && . venv/bin/activate
-pip install -r requirements.txt
-python main.py --mode voice
-```
-
-`mpg123` plays the neural voice, `libportaudio2` gives Python mic access, and
-`espeak-ng` is the last-resort offline voice. For proper offline voices and
-speech recognition, also run `python -m tools.download_models`.
+Memory budget on a 4 GB Pi 5: bot ~90 MB (measured), one offline speech
+model + one offline voice ~450 MB, local model ~1.1 GB - under 2 GB in total.
+See the stress test below for what fits in 1 GB.
 
 ## Measured accuracy
 
