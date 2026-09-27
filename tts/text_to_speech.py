@@ -11,6 +11,8 @@ just stops working mid-demo.
 import asyncio
 import ctypes
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -73,6 +75,14 @@ class TextToSpeech:
             if config.TTS_OFFLINE_VOICE.lower() in v.name.lower():
                 engine.setProperty("voice", v.id)
                 break
+        else:
+            if os.name != "nt":
+                # Zira is Windows-only; espeak-ng's "+f3" variant is its
+                # clearest female voice.
+                try:
+                    engine.setProperty("voice", "en+f3")
+                except Exception:
+                    pass
         engine.setProperty("rate", config.TTS_RATE)
         engine.setProperty("volume", config.TTS_VOLUME)
         engine.say(text)
@@ -80,11 +90,31 @@ class TextToSpeech:
         engine.stop()
 
 
+# Command-line players tried on Linux/macOS, lightest first. mpg123 is a
+# ~200 KB apt package and the recommended choice on a Raspberry Pi.
+_PLAYERS = [
+    ["mpg123", "-q"],
+    ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"],
+    ["mpv", "--no-video", "--really-quiet"],
+    ["cvlc", "--play-and-exit", "--quiet"],
+    ["afplay"],  # macOS built-in
+]
+
+
 def _play_mp3(path: str) -> None:
+    if os.name == "nt":
+        _play_mp3_windows(path)
+        return
+    for cmd in _PLAYERS:
+        if shutil.which(cmd[0]):
+            subprocess.run([*cmd, path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return
+    raise RuntimeError("no mp3 player found, run: sudo apt install mpg123")
+
+
+def _play_mp3_windows(path: str) -> None:
     """Plays an mp3 through Windows' built-in MCI player, so no audio
     library or codec needs installing."""
-    if os.name != "nt":
-        raise RuntimeError("mp3 playback is only implemented for Windows")
     winmm = ctypes.windll.winmm
 
     def mci(cmd: str) -> None:

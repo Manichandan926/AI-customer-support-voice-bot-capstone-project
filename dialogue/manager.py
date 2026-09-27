@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import config
 from nlu.entities import OrderLookup, extract_order_id
 from nlu.matcher import FAQMatcher, content_words, normalize
+from nlu.sentiment import SentimentAnalyzer
 
 EXIT_COMMANDS = {"exit", "quit", "bye", "goodbye", "bye bye", "stop", "end", "that is all", "thats all"}
 
@@ -36,6 +37,13 @@ ESCALATE_MSG = ("I'm not sure about that one, so I'm connecting you to a human a
                 "You can also call us toll-free at 1800-123-4567.")
 HANDOFF_MSG = "Sure, I'm transferring you to a human agent now. Please stay on the line."
 GOODBYE_MSG = f"Thanks for contacting {config.COMPANY_NAME}. Have a great day!"
+PRIORITY_MSG = ("I can tell this has been really frustrating, and I'm sorry. I'm connecting you to a "
+                "senior agent right away with priority, so you won't have to repeat yourself.")
+EMPATHY = {
+    "angry": "I'm really sorry for the trouble, and I want to get this sorted for you.",
+    "negative": "I'm sorry to hear that.",
+}
+_ALREADY_APOLOGETIC = ("sorry", "i'm sorry", "don't worry", "apolog")
 
 SMALL_TALK = [
     (re.compile(r"^(hi|hello|hey|hii+|good (morning|afternoon|evening)|namaste)( there)?( aria)?$"),
@@ -64,6 +72,7 @@ class Turn:
     confidence: float = 0.0
     source: str = ""        # faq id, "order", "ai:<provider>", ...
     latency_ms: float = 0.0
+    sentiment: str = "neutral"
 
     @property
     def is_exit(self) -> bool:
@@ -75,6 +84,8 @@ class DialogueManager:
         self.matcher = matcher or FAQMatcher()
         self.ai = ai            # LLMAssistant or None for rule-only
         self.orders = orders or OrderLookup()
+        self.sentiment = SentimentAnalyzer()
+        self._frustration = 0    # builds with angry/negative turns, decays when calm
         self._pending = None     # (Match, original query) awaiting yes/no
         self._last_faq = None    # most recent FAQ answered, for follow-ups
         self._history: list[dict] = []
@@ -83,7 +94,12 @@ class DialogueManager:
     # ------------------------------------------------------------------ public
     def handle(self, query: str) -> Turn:
         start = time.perf_counter()
-        turn = self._route(query.strip())
+        query = query.strip()
+        mood = self.sentiment.analyze(query)
+        turn = self._route(query)
+        if not turn.is_exit:
+            turn = self._apply_sentiment(turn, mood.label)
+        turn.sentiment = mood.label
         turn.latency_ms = (time.perf_counter() - start) * 1000
         if not turn.is_exit:
             self._turns.append(turn)
@@ -101,8 +117,23 @@ class DialogueManager:
             "ai_answered": count("ai"),
             "clarified": count("clarify"),
             "escalated": count("escalate"),
+            "upset_turns": sum(t.sentiment in ("negative", "angry") for t in self._turns),
             "avg_latency_ms": round(sum(t.latency_ms for t in self._turns) / n, 2) if n else 0.0,
         }
+
+    # --------------------------------------------------------------- sentiment
+    def _apply_sentiment(self, turn: Turn, mood: str) -> Turn:
+        self._frustration = max(0, self._frustration + {"angry": 2, "negative": 1}.get(mood, -1))
+        if self._frustration >= config.FRUSTRATION_ESCALATE:
+            # Repeated anger means the bot isn't helping, however good its
+            # answers look; a human with the context is the better service.
+            self._frustration = 0
+            self._pending = None
+            return Turn(turn.query, PRIORITY_MSG, "escalate", 1.0, "sentiment")
+        if (mood in EMPATHY and turn.action in ("answer", "order", "ai", "clarify")
+                and not turn.response.lower().startswith(_ALREADY_APOLOGETIC)):
+            turn.response = f"{EMPATHY[mood]} {turn.response}"
+        return turn
 
     # ----------------------------------------------------------------- routing
     def _route(self, query: str) -> Turn:

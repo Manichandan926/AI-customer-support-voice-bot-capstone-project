@@ -3,6 +3,7 @@
 # Rule engine
 scikit-learn
 rapidfuzz
+vaderSentiment    # offline sentiment scoring (pure Python)
 
 # Voice (only imported in --mode voice / --speak)
 SpeechRecognition

@@ -36,6 +36,17 @@ FUZZY_WEIGHT = 0.25
 # "weather" -> "whether" style near-misses on unrelated words mostly don't.
 SPELL_MATCH = 80
 
+# --- Sentiment ---------------------------------------------------------------
+# VADER compound score bands (-1..1). "angry" additionally needs an anger
+# word or shouting, so a plain complaint ("it arrived broken") stays "negative".
+ANGRY_SCORE = -0.2
+NEGATIVE_SCORE = -0.35
+POSITIVE_SCORE = 0.3
+# Frustration builds up across the conversation (angry +2, negative +1,
+# calm turns -1). At this level the customer goes to a human with priority,
+# rather than getting yet another bot answer.
+FRUSTRATION_ESCALATE = 3
+
 # --- AI fallback (cloud LLMs, optional) ------------------------------------
 # Tried in this order; providers without an API key are skipped silently.
 AI_PROVIDER_ORDER = ["groq", "gemini", "claude"]
@@ -50,15 +61,24 @@ CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5")
 
 AI_TIMEOUT_SECONDS = 20
 AI_MAX_TOKENS = 1024       # replies are spoken aloud, so the prompt asks for 1-3 sentences
-AI_CONTEXT_FAQS = 4        # top-k FAQ entries handed to the LLM as grounding
 AI_HISTORY_TURNS = 4       # recent exchanges sent for conversational context
 AI_ESCALATE_TOKEN = "ESCALATE"
 
 # --- Voice ------------------------------------------------------------------
 ASR_LANGUAGE = os.getenv("ASR_LANGUAGE", "en-IN")  # Google recognizer locale
-RECORD_SECONDS = 5
 SAMPLE_RATE = 16000
-SILENCE_RMS = 150          # int16 RMS below this is treated as "nothing said"
+SILENCE_RMS = 150          # int16 RMS floor; the live threshold never goes below this
+
+# End-of-speech detection (all in seconds unless noted)
+VAD_FRAME_MS = 30          # analysis frame length, milliseconds
+VAD_WARMUP = 0.4           # discard the mic's first moments (often silent zeros)
+VAD_CALIBRATE = 0.5        # then measure room noise before listening
+VAD_NOISE_FACTOR = 2.5     # speech must be this many times louder than room noise (75th pct)
+VAD_MIN_SPEECH = 0.15      # sustained loudness needed to count as speech starting
+VAD_END_SILENCE = 0.9      # this much quiet after speech ends the utterance
+VAD_START_TIMEOUT = 7.0    # give up if nobody starts speaking
+VAD_MAX_SECONDS = 10.0     # hard cap on one utterance
+VAD_PREROLL = 0.3          # audio kept from just before speech was detected
 
 TTS_ENGINE = os.getenv("TTS_ENGINE", "edge")   # "edge" (neural, online) or "sapi" (offline)
 # Neural voice: Indian English female. Other gentle options:

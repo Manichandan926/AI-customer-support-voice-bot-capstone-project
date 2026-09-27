@@ -35,8 +35,13 @@ No GPU, no local ML models, no multi-GB downloads.
 - **AI fallback** handles questions the FAQ list doesn't phrase directly. The
   LLM sees only the FAQ content and must reply `ESCALATE` if the answer
   isn't there, so it can't make up policies.
+- **Sentiment detection** (offline, VADER + an anger lexicon): upset customers
+  get an empathetic reply; repeated anger hands them to a senior agent with
+  priority instead of another bot answer.
+- **Hands-free listening**: voice mode stops recording when you stop talking,
+  adapting to the room's background noise.
 - **Session stats** (turns, answered, AI-answered, clarified, escalated,
-  average latency) print when the session ends.
+  upset turns, average latency) print when the session ends.
 
 ## Setup
 
@@ -59,10 +64,11 @@ API keys (any subset works, none is required):
 
 ```powershell
 python main.py                      # text chat
-python main.py --mode voice         # press Enter, speak for 5 s, hear the reply
+python main.py --mode voice         # press Enter, speak; it stops when you stop
 python main.py --speak              # type questions, hear replies
 python main.py --no-ai              # rule engine only, fully offline
-pytest tests/ -v                    # unit tests (no network needed)
+pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
+python -m asr.speech_to_text        # mic check: shows noise level, threshold, transcript
 ```
 
 Type or say `exit` to end the session and see the stats.
@@ -80,6 +86,7 @@ Type or say `exit` to end the session and see the stats.
 | `track order` then `10234` | asks for, then looks up, the order number |
 | `do you have a store in hyderabad` | AI fallback (with a key) |
 | `what's the weather today` | off-topic, escalated to human |
+| `the product arrived broken` then `this is the worst service, useless` | empathy, then priority handoff on repeated anger |
 | `exit` | session stats |
 
 Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
@@ -96,6 +103,24 @@ Sample order numbers: 10234, 10567, 10891, 11002, 11345, 11789, 12001.
 - **AI fallback shows "off"**: no keys found. Check `.env` is in the project
   folder and the variable names match `.env.example`.
 - **Wrong accent recognition**: set `ASR_LANGUAGE` in `.env` (default `en-IN`).
+- **Voice mode never hears you, or never stops listening**: run
+  `python -m asr.speech_to_text` and compare the printed noise level with your
+  speech level. In a noisy room raise `VAD_NOISE_FACTOR` in `config.py`; if it
+  misses quiet speech, lower it.
+
+## Linux / Raspberry Pi
+
+Same code, plus a few system packages for audio:
+
+```bash
+sudo apt install -y python3-venv libportaudio2 mpg123 espeak-ng
+python3 -m venv venv && . venv/bin/activate
+pip install -r requirements.txt
+python main.py --mode voice
+```
+
+`mpg123` plays the neural voice, `libportaudio2` gives Python mic access, and
+`espeak-ng` is the offline fallback voice.
 
 ## Aria's voice
 
@@ -117,10 +142,11 @@ data/faq_data.json     40 FAQ entries (orders, shipping, returns, refunds, billi
 data/orders.json       mock order table for order-number lookups
 nlu/matcher.py         stemming, spell correction, TF-IDF + fuzzy retrieval, content-word gate
 nlu/entities.py        order-number extraction and lookup
+nlu/sentiment.py       offline sentiment + anger detection
 dialogue/manager.py    confidence routing, context, clarification, stats
 ai/llm.py              Groq / Gemini / Claude fallback chain
-asr/speech_to_text.py  microphone capture + Google speech recognition
+asr/speech_to_text.py  mic capture with end-of-speech detection + Google speech recognition
 tts/text_to_speech.py  neural voice via edge-tts, offline fallback via pyttsx3
 main.py                CLI
-tests/test_matcher.py  unit tests
+tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback)
 ```

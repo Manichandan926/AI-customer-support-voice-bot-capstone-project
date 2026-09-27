@@ -45,7 +45,9 @@ def print_turn(turn) -> None:
     color = ACTION_COLOR.get(turn.action, "")
     print(f"{BOLD}{config.BOT_NAME}:{RESET} {turn.response}")
     print(f"{DIM}  [{color}{turn.action}{RESET}{DIM} | confidence {turn.confidence:.2f}"
-          f"{' | ' + turn.source if turn.source else ''} | {turn.latency_ms:.1f} ms]{RESET}\n")
+          f"{' | ' + turn.source if turn.source else ''}"
+          f"{' | mood: ' + turn.sentiment if turn.sentiment != 'neutral' else ''}"
+          f" | {turn.latency_ms:.1f} ms]{RESET}\n")
 
 
 def print_stats(stats: dict) -> None:
@@ -55,12 +57,12 @@ def print_stats(stats: dict) -> None:
 
 
 def get_voice_query(stt) -> str | None:
-    typed = input(f"{DIM}[Enter] to speak for {config.RECORD_SECONDS}s, or type:{RESET} ").strip()
+    typed = input(f"{DIM}[Enter] then speak, or type:{RESET} ").strip()
     if typed:
         return typed
-    print(f"{CYAN}  Listening...{RESET}")
+    print(f"{CYAN}  Listening... (I'll stop when you stop talking){RESET}")
     try:
-        text = stt.listen()
+        text = stt.listen(on_speech_start=lambda: print(f"{CYAN}  Hearing you...{RESET}"))
     except RuntimeError as e:
         print(f"{RED}  {e}{RESET}")
         return None

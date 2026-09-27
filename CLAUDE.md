@@ -28,7 +28,13 @@ fastembed + llama-cpp-python + Qwen GGUF, faster-whisper) was dropped in favour 
 3. **Voice** - SpeechRecognition's free Google recognizer (audio captured via
    sounddevice, not PyAudio). TTS is edge-tts neural voice `en-IN-NeerjaNeural`
    (online, played via Windows MCI), falling back to pyttsx3 + Zira offline.
-   Lazy-loaded; text mode never imports them.
+   Lazy-loaded; text mode never imports them. Energy-based endpointing
+   (`asr.Endpointer`, pure logic, unit-tested) stops recording on silence.
+4. **Sentiment** (`nlu/sentiment.py`) - VADER + anger lexicon; empathy prefix
+   on negative turns, priority escalation when frustration accumulates.
+
+Must run on Windows and Linux, including a Raspberry Pi 5 (4GB) - keep
+everything light and cross-platform (Linux playback via mpg123 etc.).
 
 ## Target environment - CPU only
 
