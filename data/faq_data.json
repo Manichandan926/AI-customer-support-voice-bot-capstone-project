@@ -1,0 +1,508 @@
+[
+  {
+    "id": "order_status",
+    "category": "orders",
+    "question": "How can I track my order?",
+    "variants": [
+      "where is my order",
+      "track my package",
+      "order status",
+      "when will my order arrive",
+      "check delivery status of my order"
+    ],
+    "answer": "You can track your order under My Account > Orders, or just tell me your order number and I'll check it for you."
+  },
+  {
+    "id": "cancel_order",
+    "category": "orders",
+    "question": "How do I cancel my order?",
+    "variants": [
+      "cancel my order",
+      "i want to cancel a purchase",
+      "stop my order",
+      "cancel order before shipping"
+    ],
+    "answer": "You can cancel an order free of charge before it ships: go to My Account > Orders, select the order and tap Cancel. Once shipped, you'll need to return it instead."
+  },
+  {
+    "id": "modify_order",
+    "category": "orders",
+    "question": "Can I change or modify my order after placing it?",
+    "variants": [
+      "change my order",
+      "edit my order",
+      "add item to existing order",
+      "change size of ordered item",
+      "update order quantity"
+    ],
+    "answer": "Orders can be edited within 1 hour of placing them from My Account > Orders > Edit. After that the order is sent to the warehouse, so it's best to cancel and reorder if it hasn't shipped."
+  },
+  {
+    "id": "change_address",
+    "category": "shipping",
+    "question": "How do I change my delivery address?",
+    "variants": [
+      "change shipping address",
+      "update delivery address for order",
+      "wrong address on order",
+      "deliver to a different address"
+    ],
+    "answer": "You can change the delivery address before the order ships from My Account > Orders > Change Address. If it has already shipped, contact the courier using the tracking link to reroute it."
+  },
+  {
+    "id": "shipping_time",
+    "category": "shipping",
+    "question": "How long does delivery take?",
+    "variants": [
+      "delivery time",
+      "how many days for shipping",
+      "when will it be delivered",
+      "shipping duration",
+      "how fast is delivery"
+    ],
+    "answer": "Standard delivery takes 3 to 5 business days, express delivery takes 1 to 2 business days, and same-day delivery is available in select metro cities for orders placed before 12 PM."
+  },
+  {
+    "id": "shipping_cost",
+    "category": "shipping",
+    "question": "How much does shipping cost?",
+    "variants": [
+      "shipping charges",
+      "delivery fee",
+      "is shipping free",
+      "free delivery",
+      "shipping price"
+    ],
+    "answer": "Shipping is free on orders above Rs. 499. Below that, standard delivery costs Rs. 49 and express delivery costs Rs. 99."
+  },
+  {
+    "id": "international_shipping",
+    "category": "shipping",
+    "question": "Do you ship internationally?",
+    "variants": [
+      "ship outside india",
+      "international delivery",
+      "ship to another country",
+      "overseas shipping"
+    ],
+    "answer": "Yes, we ship to over 20 countries. International delivery takes 7 to 14 business days, and customs duties are paid by the customer on delivery."
+  },
+  {
+    "id": "delayed_order",
+    "category": "shipping",
+    "question": "My order is late, what should I do?",
+    "variants": [
+      "order delayed",
+      "package not arrived yet",
+      "delivery is late",
+      "order not delivered on time",
+      "still waiting for my package",
+      "parcel has not arrived",
+      "my parcel has not come"
+    ],
+    "answer": "Sorry about the delay! Delays usually clear within 48 hours. Share your order number and I'll check its status; if it's more than 3 days past the expected date, we'll escalate it with the courier."
+  },
+  {
+    "id": "damaged_item",
+    "category": "returns",
+    "question": "I received a damaged or defective item",
+    "variants": [
+      "item arrived broken",
+      "product is damaged",
+      "defective product",
+      "received broken item",
+      "product not working",
+      "package arrived open or tampered"
+    ],
+    "answer": "I'm sorry about that. Please report it within 7 days from My Account > Orders > Report a Problem with a photo of the item. We'll send a free replacement or a full refund, and pick up the damaged item at no cost."
+  },
+  {
+    "id": "wrong_item",
+    "category": "returns",
+    "question": "I received the wrong item",
+    "variants": [
+      "got wrong product",
+      "incorrect item delivered",
+      "this is not what i ordered",
+      "wrong size delivered"
+    ],
+    "answer": "Sorry for the mix-up! Go to My Account > Orders > Report a Problem and choose 'Wrong item received'. We'll arrange a free pickup and ship the correct item right away."
+  },
+  {
+    "id": "missing_item",
+    "category": "returns",
+    "question": "An item is missing from my package",
+    "variants": [
+      "missing item in order",
+      "package incomplete",
+      "did not receive all items",
+      "part of my order is missing"
+    ],
+    "answer": "Some orders ship in multiple packages, so please check your tracking page first. If an item is still missing, report it within 48 hours of delivery from My Account > Orders > Report a Problem."
+  },
+  {
+    "id": "return_policy",
+    "category": "returns",
+    "question": "What is your return policy?",
+    "variants": [
+      "can i return a product",
+      "return rules",
+      "how many days to return",
+      "return window",
+      "is this item returnable"
+    ],
+    "answer": "Most items can be returned within 30 days of delivery if unused and in original packaging. Innerwear, personal care items and gift cards are not returnable."
+  },
+  {
+    "id": "how_to_return",
+    "category": "returns",
+    "question": "How do I return an item?",
+    "variants": [
+      "start a return",
+      "return process",
+      "send back a product",
+      "return my purchase",
+      "schedule a return pickup"
+    ],
+    "answer": "Go to My Account > Orders, select the item and tap Return. Choose a reason and a pickup slot, and our courier will collect it from your address for free."
+  },
+  {
+    "id": "exchange",
+    "category": "returns",
+    "question": "Can I exchange an item for a different size or color?",
+    "variants": [
+      "exchange product",
+      "swap size",
+      "replace with different color",
+      "exchange for another size"
+    ],
+    "answer": "Yes, size and color exchanges are free within 30 days of delivery, subject to stock. Select the item under My Account > Orders and tap Exchange."
+  },
+  {
+    "id": "refund_time",
+    "category": "refunds",
+    "question": "How long does a refund take?",
+    "variants": [
+      "when will i get my refund",
+      "refund timeline",
+      "refund not received",
+      "how many days for refund",
+      "refund status",
+      "i want my money back",
+      "get my money back"
+    ],
+    "answer": "Refunds are issued within 2 business days after we receive the returned item. UPI and wallet refunds arrive instantly, cards take 5 to 7 business days, and net banking takes 3 to 5 days."
+  },
+  {
+    "id": "refund_method",
+    "category": "refunds",
+    "question": "Where will my refund be credited?",
+    "variants": [
+      "refund to original payment method",
+      "refund to wallet",
+      "refund for cash on delivery order",
+      "how do i receive my refund"
+    ],
+    "answer": "Refunds go back to the original payment method. For cash on delivery orders, you can choose a bank transfer or ShopEase wallet credit, which is instant."
+  },
+  {
+    "id": "payment_methods",
+    "category": "billing",
+    "question": "What payment methods do you accept?",
+    "variants": [
+      "payment options",
+      "can i pay with upi",
+      "do you accept credit cards",
+      "ways to pay",
+      "pay using net banking"
+    ],
+    "answer": "We accept UPI, credit and debit cards, net banking, ShopEase wallet, EMI on eligible cards, and cash on delivery for orders up to Rs. 10,000."
+  },
+  {
+    "id": "cod",
+    "category": "billing",
+    "question": "Is cash on delivery available?",
+    "variants": [
+      "cod available",
+      "pay on delivery",
+      "pay cash when delivered",
+      "cash on delivery charges"
+    ],
+    "answer": "Yes, cash on delivery is available for orders up to Rs. 10,000 in most pin codes. A small handling fee of Rs. 20 applies."
+  },
+  {
+    "id": "payment_failed",
+    "category": "billing",
+    "question": "My payment failed but money was deducted",
+    "variants": [
+      "payment failed",
+      "money debited but order not placed",
+      "transaction failed",
+      "amount deducted twice",
+      "payment declined"
+    ],
+    "answer": "Don't worry - if money was deducted for a failed payment, it's automatically reversed to your account within 5 to 7 business days. If it hasn't arrived after that, share your transaction ID and we'll raise it with the bank."
+  },
+  {
+    "id": "invoice",
+    "category": "billing",
+    "question": "How do I download my invoice?",
+    "variants": [
+      "get invoice",
+      "download bill",
+      "gst invoice",
+      "receipt for my order",
+      "tax invoice",
+      "bill for my purchase"
+    ],
+    "answer": "You can download your invoice from My Account > Orders > select the order > Download Invoice. GST invoices are available if you added your GSTIN at checkout."
+  },
+  {
+    "id": "emi",
+    "category": "billing",
+    "question": "Do you offer EMI options?",
+    "variants": [
+      "pay in installments",
+      "no cost emi",
+      "monthly payment plan",
+      "emi on credit card"
+    ],
+    "answer": "Yes, EMI is available on orders above Rs. 3,000 with most major credit cards, and no-cost EMI is offered on selected products. You'll see EMI options at checkout."
+  },
+  {
+    "id": "coupon",
+    "category": "billing",
+    "question": "My coupon code is not working",
+    "variants": [
+      "promo code not working",
+      "discount code invalid",
+      "coupon not applied",
+      "how to apply coupon",
+      "offer not applied"
+    ],
+    "answer": "Coupons usually fail because of a minimum order value, an expiry date, or product exclusions. Check the coupon's terms under Offers; each coupon can only be used once per account."
+  },
+  {
+    "id": "price_drop",
+    "category": "billing",
+    "question": "The price dropped after I bought it, can I get the difference?",
+    "variants": [
+      "price protection",
+      "price reduced after purchase",
+      "refund price difference",
+      "cheaper now than when i bought"
+    ],
+    "answer": "We don't offer price protection on completed orders. However, if the item hasn't shipped, you can cancel and reorder at the new price."
+  },
+  {
+    "id": "create_account",
+    "category": "account",
+    "question": "How do I create an account?",
+    "variants": [
+      "sign up",
+      "register new account",
+      "make an account",
+      "open an account"
+    ],
+    "answer": "Tap Sign Up on the app or website and enter your mobile number or email. You'll get a one-time password to verify, and your account is ready in under a minute."
+  },
+  {
+    "id": "reset_password",
+    "category": "account",
+    "question": "How do I reset my password?",
+    "variants": [
+      "forgot password",
+      "cannot log in",
+      "change my password",
+      "locked out of account",
+      "login problem",
+      "cannot log in to my account"
+    ],
+    "answer": "On the login page, tap 'Forgot Password' and enter your registered email or phone number. You'll receive a reset link or OTP valid for 15 minutes."
+  },
+  {
+    "id": "update_profile",
+    "category": "account",
+    "question": "How do I update my phone number or email?",
+    "variants": [
+      "change email address",
+      "update mobile number",
+      "edit profile details",
+      "change my name on account"
+    ],
+    "answer": "Go to My Account > Profile and tap Edit. Changing your phone number or email requires OTP verification on the new contact."
+  },
+  {
+    "id": "delete_account",
+    "category": "account",
+    "question": "How do I delete my account?",
+    "variants": [
+      "close my account",
+      "remove my account",
+      "deactivate account",
+      "delete my data"
+    ],
+    "answer": "You can request account deletion from My Account > Settings > Delete Account. It's processed within 7 days once there are no pending orders or refunds, and it can't be undone."
+  },
+  {
+    "id": "account_hacked",
+    "category": "account",
+    "question": "I think my account was hacked",
+    "variants": [
+      "unauthorized order on my account",
+      "someone logged into my account",
+      "suspicious activity",
+      "account compromised"
+    ],
+    "answer": "Please reset your password immediately and log out of all devices from Settings > Security. I'm also flagging this for our security team - a human agent will contact you within 2 hours."
+  },
+  {
+    "id": "wallet",
+    "category": "account",
+    "question": "How does the ShopEase wallet work?",
+    "variants": [
+      "wallet balance",
+      "use wallet money",
+      "add money to wallet",
+      "wallet credit"
+    ],
+    "answer": "ShopEase wallet holds refunds and gift card balances. It's applied automatically at checkout, and the balance is shown under My Account > Wallet. Wallet money can't be transferred to a bank."
+  },
+  {
+    "id": "membership",
+    "category": "account",
+    "question": "What is ShopEase Plus membership?",
+    "variants": [
+      "plus membership benefits",
+      "prime membership",
+      "subscription benefits",
+      "membership price"
+    ],
+    "answer": "ShopEase Plus costs Rs. 999 a year and gives you free express delivery, early access to sales, and 5% extra cashback on every order."
+  },
+  {
+    "id": "gift_card",
+    "category": "billing",
+    "question": "How do I use a gift card?",
+    "variants": [
+      "redeem gift card",
+      "gift voucher",
+      "add gift card balance",
+      "buy a gift card"
+    ],
+    "answer": "Redeem a gift card from My Account > Wallet > Add Gift Card. The balance is added to your wallet and applied automatically at checkout. Gift cards are valid for 1 year."
+  },
+  {
+    "id": "warranty",
+    "category": "products",
+    "question": "Does my product have a warranty?",
+    "variants": [
+      "warranty claim",
+      "guarantee on product",
+      "manufacturer warranty",
+      "product repair"
+    ],
+    "answer": "Electronics and appliances carry the manufacturer's warranty, usually 1 year. Warranty claims go through the brand's service center; the warranty card and your invoice are all you need."
+  },
+  {
+    "id": "out_of_stock",
+    "category": "products",
+    "question": "When will an out of stock item be available?",
+    "variants": [
+      "item out of stock",
+      "product unavailable",
+      "restock date",
+      "notify me when available"
+    ],
+    "answer": "We can't confirm restock dates, but tap 'Notify Me' on the product page and we'll alert you by SMS and email the moment it's back."
+  },
+  {
+    "id": "product_authentic",
+    "category": "products",
+    "question": "Are your products genuine?",
+    "variants": [
+      "is this original",
+      "fake product",
+      "authentic products",
+      "counterfeit item"
+    ],
+    "answer": "Yes, all products are sourced directly from brands or authorized sellers. If you ever suspect an item isn't genuine, report it and we'll issue a full refund after verification."
+  },
+  {
+    "id": "size_guide",
+    "category": "products",
+    "question": "How do I find the right size?",
+    "variants": [
+      "size chart",
+      "which size should i buy",
+      "size guide",
+      "fit information"
+    ],
+    "answer": "Every clothing and footwear page has a Size Chart link below the size options. If it doesn't fit, size exchanges are free within 30 days."
+  },
+  {
+    "id": "contact_support",
+    "category": "support",
+    "question": "How can I contact customer care?",
+    "variants": [
+      "customer care number",
+      "support phone number",
+      "email support",
+      "contact details",
+      "call customer service",
+      "talk to customer care",
+      "how do i reach you",
+      "contact customer support"
+    ],
+    "answer": "You can reach us 24/7 through this assistant, by calling 1800-123-4567 (toll-free), or by emailing support@shopease.example."
+  },
+  {
+    "id": "working_hours",
+    "category": "support",
+    "question": "What are your customer support hours?",
+    "variants": [
+      "support timings",
+      "when is customer care open",
+      "business hours",
+      "are you open on sunday"
+    ],
+    "answer": "This assistant is available 24/7. Human agents are available by phone from 8 AM to 10 PM, all seven days."
+  },
+  {
+    "id": "complaint",
+    "category": "support",
+    "question": "I want to file a complaint",
+    "variants": [
+      "raise a complaint",
+      "i am not happy with the service",
+      "bad experience",
+      "escalate my issue",
+      "file a grievance"
+    ],
+    "answer": "I'm sorry you've had a bad experience. I've noted your complaint and can connect you to a senior agent - you'll also get a ticket number by email within a few minutes so you can track it."
+  },
+  {
+    "id": "seller",
+    "category": "support",
+    "question": "How can I become a seller on ShopEase?",
+    "variants": [
+      "sell on shopease",
+      "register as seller",
+      "seller account",
+      "list my products"
+    ],
+    "answer": "Visit sell.shopease.example and register with your GSTIN, PAN and bank details. Verification usually takes 2 to 3 business days."
+  },
+  {
+    "id": "privacy",
+    "category": "account",
+    "question": "How is my personal data protected?",
+    "variants": [
+      "privacy policy",
+      "data security",
+      "is my card information safe",
+      "do you share my data"
+    ],
+    "answer": "Your data is encrypted and we never sell it to third parties. Card details are handled by PCI-DSS certified payment partners and are never stored on our servers."
+  }
+]

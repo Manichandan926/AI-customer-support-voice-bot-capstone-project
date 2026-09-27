@@ -10,3 +10,6 @@ venv/
 *.egg-info/
 .DS_Store
 .env
+*.wav
+*.mp3
+models/

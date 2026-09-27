@@ -1,10 +1,21 @@
-# Core dependencies kept intentionally lightweight for local development on
-# laptops with limited memory.
-python-dotenv>=1.0.0
+# Everything here is CPU-only - no torch, no GPU toolkits, no scikit-learn.
+# Cloud AI SDKs are optional: see requirements-cloud.txt.
 
-# When real ASR/NLU/TTS modules are added, pin their versions here, e.g.:
-# openai-whisper==...
-# onnxruntime==...
-# piper-tts==...
+# Rule engine (text chat)
+rapidfuzz         # fuzzy matching (C extension, tiny)
+vaderSentiment    # offline sentiment scoring (pure Python)
+python-dotenv     # reads .env
 
-# Optional AI response support is installed separately via requirements-llm.txt.
+# Voice (only imported in --mode voice / --speak)
+SpeechRecognition
+sounddevice
+numpy
+pyttsx3
+edge-tts          # neural voices (online); offline chain: piper -> pyttsx3
+
+# Offline mode (models downloaded separately: python -m tools.download_models)
+vosk              # offline speech recognition (Kaldi small models, ~40 MB each)
+piper-tts         # offline neural voices (ONNX Runtime on CPU, ~63 MB each)
+
+# Tests
+pytest

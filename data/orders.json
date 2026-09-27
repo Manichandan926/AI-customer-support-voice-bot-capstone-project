@@ -1,0 +1,37 @@
+{
+  "10234": {
+    "item": "Wireless Earbuds",
+    "status": "shipped",
+    "detail": "It left our warehouse yesterday and is expected to arrive on Thursday."
+  },
+  "10567": {
+    "item": "Running Shoes",
+    "status": "out for delivery",
+    "detail": "It should reach you today by 7 PM."
+  },
+  "10891": {
+    "item": "Cotton T-Shirt (pack of 3)",
+    "status": "delivered",
+    "detail": "It was delivered two days ago and signed for at the front door."
+  },
+  "11002": {
+    "item": "Smart Watch",
+    "status": "processing",
+    "detail": "It's being packed at the warehouse and will ship within 24 hours."
+  },
+  "11345": {
+    "item": "Backpack",
+    "status": "cancelled",
+    "detail": "It was cancelled on your request, and the refund has been sent to your original payment method."
+  },
+  "11789": {
+    "item": "Bluetooth Speaker",
+    "status": "delayed",
+    "detail": "It's delayed at the courier hub due to weather. The new expected delivery date is in 2 days - sorry for the wait."
+  },
+  "12001": {
+    "item": "Laptop Stand",
+    "status": "return initiated",
+    "detail": "A return pickup is scheduled for tomorrow between 10 AM and 2 PM."
+  }
+}

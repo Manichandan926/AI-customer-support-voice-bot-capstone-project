@@ -1,0 +1,9 @@
+# Optional: cloud AI fallback. Only needed if you put an API key in .env
+# (GROQ_API_KEY, GEMINI_API_KEY or ANTHROPIC_API_KEY). The bot runs fully
+# without these - the rule engine, and the local model via Ollama, need none.
+#
+#   pip install -r requirements-cloud.txt
+
+groq
+google-genai
+anthropic
