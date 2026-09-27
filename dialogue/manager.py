@@ -56,6 +56,17 @@ SMALL_TALK = [
     (re.compile(r"^(what can you do|help|what do you do)$"), "capabilities"),
 ]
 SMALL_TALK_KEYS = ("hello", "thanks", "ack", "how_are_you", "who_are_you", "capabilities")
+_INDIC_MATCHERS: dict = {}
+_DEFAULT_MATCHER: list = []
+
+
+def _default_matcher() -> FAQMatcher:
+    # Built once per process and shared, for the same reason as the Indic ones.
+    if not _DEFAULT_MATCHER:
+        _DEFAULT_MATCHER.append(FAQMatcher())
+    return _DEFAULT_MATCHER[0]
+
+
 HUMAN_REQUEST = re.compile(r"\b(human|agent|representative|real person|talk to (someone|a person)|speak to (someone|a person)|live chat)\b")
 
 
@@ -78,8 +89,7 @@ class Turn:
 class DialogueManager:
     def __init__(self, matcher: FAQMatcher | None = None, ai=None, orders: OrderLookup | None = None,
                  language: str = "en"):
-        self.matcher = matcher or FAQMatcher()   # English matcher; also owns the canonical FAQ list
-        self._indic_matchers = {}                # built on first use, per language
+        self.matcher = matcher or _default_matcher()  # English matcher; owns the canonical FAQ list
         self.ai = ai            # LLMAssistant or None for rule-only
         self.orders = orders or OrderLookup()
         self.sentiment = SentimentAnalyzer()
@@ -130,10 +140,13 @@ class DialogueManager:
     def matcher_for(self, lang: str):
         if lang == "en":
             return self.matcher
-        if lang not in self._indic_matchers:
+        # Indexes are read-only, so they're shared by every conversation in
+        # the process: a new customer session shouldn't rebuild them.
+        key = (lang, id(self.matcher.faqs))
+        if key not in _INDIC_MATCHERS:
             from nlu.indic_matcher import IndicMatcher
-            self._indic_matchers[lang] = IndicMatcher(load_pack(lang), self.matcher.faqs)
-        return self._indic_matchers[lang]
+            _INDIC_MATCHERS[key] = IndicMatcher(load_pack(lang), self.matcher.faqs)
+        return _INDIC_MATCHERS[key]
 
     # --------------------------------------------------------------- sentiment
     def _apply_sentiment(self, turn: Turn, mood: str, pack: LanguagePack) -> Turn:

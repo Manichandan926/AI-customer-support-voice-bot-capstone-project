@@ -13,9 +13,13 @@ python3 -m venv venv
 pip install -r requirements.txt
 ```
 
-The cloud AI fallback is optional. To enable it, copy `.env.example` to
-`.env` and fill in any of `GROQ_API_KEY`, `GEMINI_API_KEY` or
-`ANTHROPIC_API_KEY`. Never commit `.env`.
+The cloud AI fallback is optional: `pip install -r requirements-cloud.txt`,
+then copy `.env.example` to `.env` and fill in any of `GROQ_API_KEY`,
+`GEMINI_API_KEY` or `ANTHROPIC_API_KEY`. Never commit `.env`.
+
+Before a PR that touches matching or FAQ data, run `python -m tools.evaluate`
+and include the before/after numbers. Never copy questions from
+`data/eval/test_set.json` into the FAQ data - it would fake the score.
 
 ## Quality gates
 
@@ -47,7 +51,7 @@ The repository also ships with a Git pre-commit hook that runs the test suite au
 ## Standards
 
 - Prefer small, reviewable changes.
-- Keep the runtime lightweight; do not add heavy dependencies unless they are clearly required, and never ones that depend on PyTorch.
+- Keep the runtime lightweight (it targets a 4 GB Raspberry Pi): do not add heavy dependencies unless they are clearly required, never ones that depend on PyTorch, and import optional ones inside the function that uses them.
 - Preserve the modular design: `nlu/` (matching), `dialogue/` (routing), `ai/` (LLM fallback), `asr/` (speech in), `tts/` (speech out).
 - Thresholds and model names belong in `config.py`, not inline.
 - Update documentation when behavior or setup changes.

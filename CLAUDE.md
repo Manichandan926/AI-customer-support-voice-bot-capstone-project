@@ -48,6 +48,11 @@ fastembed + llama-cpp-python + Qwen GGUF, faster-whisper) was dropped in favour 
    phrasings; never copy test questions into FAQ data (that would fake the
    score). `tests/test_evaluation.py` guards the measured accuracy floor.
 
+Performance: no scikit-learn - `nlu/tfidf.py` reimplements TfidfVectorizer
+(sublinear tf, smooth idf, L2) and was verified identical to 1e-15. Core text
+mode: ~0.1 s startup, ~31 MB, ~1 ms replies. Keep heavy imports lazy. Cloud
+SDKs live in requirements-cloud.txt.
+
 Tests: `tests/conftest.py` simulates connectivity via `network._connect`;
 never patch `socket.create_connection` globally (it breaks urllib).
 

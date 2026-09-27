@@ -4,8 +4,9 @@ Capstone Project 15 - a conversational support assistant ("Aria" for the
 fictional store *ShopEase*) that handles customer queries by text or voice,
 instead of a traditional IVR menu.
 
-Runs on a plain CPU laptop (tested target: Intel i3, 8 GB RAM, Windows 11).
-No GPU, no local ML models, no multi-GB downloads.
+Runs on a plain CPU laptop (tested target: Intel i3, 8 GB RAM, Windows 11)
+and is sized for a Raspberry Pi 5 (4 GB). No GPU, no required model downloads:
+the core starts in ~0.1 s, uses ~31 MB of RAM and answers in ~1 ms.
 
 ## How it works
 
@@ -60,7 +61,13 @@ No GPU, no local ML models, no multi-GB downloads.
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-copy .env.example .env      # then paste in any API keys you have (all optional)
+copy .env.example .env      # optional settings
+```
+
+Optional cloud AI (only if you'll add API keys; not needed otherwise):
+
+```powershell
+pip install -r requirements-cloud.txt
 ```
 
 API keys (any subset works, none is required):
@@ -83,6 +90,7 @@ python main.py --mode voice --offline   # force offline speech + voices (no inte
 pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
 python -m asr.speech_to_text        # mic check: shows noise level, threshold, transcript
 python -m tools.evaluate            # accuracy on 105 held-out questions (see docs/evaluation.md)
+python -m tools.demo                # scripted showcase of every feature (see docs/DEMO.md)
 python main.py --hands-free         # voice without pressing Enter (standalone device)
 ```
 
@@ -166,13 +174,31 @@ not memorization - through the rule engine alone (no AI, offline):
 | answer precision (right when it answers) | 89% | 83% | 100% | 100% |
 | off-topic questions correctly handed off | 92% | 88% | 100% | 100% |
 | language detected correctly | 100% | 100% | 100% | 100% |
-| average reply time | 5 ms | 1.4 ms | 13 ms | 11 ms |
+| average reply time | 0.9 ms | 0.6 ms | 1.6 ms | 1.2 ms |
 
 The remaining English misses need understanding of meaning ("do I have to
 *pay for* delivery" vs "shipping *cost*"), which is what the AI fallback is
 for; run `python -m tools.evaluate --with-ai` with Ollama installed to
 measure it. A test (`tests/test_evaluation.py`) fails if accuracy ever
 drops below these levels. Full list of misses: `docs/evaluation.md`.
+
+## Performance
+
+Measured on the target laptop (i3-10th gen), text mode, rule engine:
+
+| | |
+|---|---|
+| startup (import) | ~0.1 s |
+| reply time | ~0.6 ms English, ~1.5 ms Telugu/Hindi (one-time ~12 ms index build per language) |
+| memory (peak, core) | ~31 MB |
+| install (fresh venv, incl. voice + offline libs) | ~305 MB (was ~540 MB); models extra (~330 MB offline, ~1 GB local AI) |
+
+How: TF-IDF is a ~60-line module (`nlu/tfidf.py`) instead of scikit-learn,
+which alone took ~1 s to import and pulled in scipy - verified to produce
+the same scores to 1e-15. Voice, offline and AI libraries are imported only
+when used. Telugu/Hindi indexes are built only when a message in that
+language arrives, then shared by every conversation in the process, so a
+kiosk starting a new session per customer never rebuilds them.
 
 ## Local AI (optional, no API key)
 
@@ -244,7 +270,8 @@ TTS_ENGINE=sapi                # force the offline voice
 config.py              thresholds, model names, voice settings
 data/faq_data.json     40 FAQ entries (orders, shipping, returns, refunds, billing, account)
 data/orders.json       mock order table for order-number lookups
-nlu/matcher.py         stemming, spell correction, TF-IDF + fuzzy retrieval, content-word gate
+nlu/matcher.py         stemming, synonyms, spell correction, TF-IDF + fuzzy retrieval, content-word gate
+nlu/tfidf.py           lightweight TF-IDF (same math as scikit-learn, without the dependency)
 nlu/entities.py        order-number extraction and lookup
 nlu/sentiment.py       offline sentiment + anger detection
 nlu/language.py        language packs, per-message language detection, spelling folding
@@ -259,8 +286,11 @@ asr/offline_asr.py     Vosk offline speech recognition (+ Telugu FAQ grammar)
 network.py             cached connectivity check that drives online/offline switching
 tools/download_models.py  one-time offline model download
 tools/evaluate.py      accuracy report on data/eval/test_set.json (held-out questions)
+tools/demo.py          scripted demo of every feature
 scripts/setup_pi.sh    Raspberry Pi / Linux setup, optional autostart service
 docs/evaluation.md     latest evaluation report
+docs/DEMO.md           demo-day checklist, fallbacks, likely panel questions
+requirements-cloud.txt optional cloud AI SDKs (Groq, Gemini, Claude)
 main.py                CLI
 tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback, multilingual)
 ```

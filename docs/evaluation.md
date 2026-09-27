@@ -10,8 +10,8 @@
 | missed (sent to human) | 3 | 3 | 0 | 0 |
 | off-topic correctly rejected | 91.7% | 87.5% | 100.0% | 100.0% |
 | language detected correctly | 100.0% | 100.0% | 100.0% | 100.0% |
-| avg latency (ms) | 5.08 | 1.42 | 12.77 | 11.38 |
-| p95 latency (ms) | 13.59 | 1.59 | 14.02 | 12.64 |
+| avg latency (ms) | 0.85 | 0.58 | 1.58 | 1.20 |
+| p95 latency (ms) | 1.15 | 0.57 | 1.28 | 1.21 |
 
 ## Not answered correctly (30)
 

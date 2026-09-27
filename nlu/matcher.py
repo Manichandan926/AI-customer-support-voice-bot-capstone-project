@@ -13,10 +13,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
 import config
+from nlu.stopwords import ENGLISH_STOP_WORDS
+from nlu.tfidf import TfidfIndex, word_ngrams
 
 try:
     from rapidfuzz import fuzz, process
@@ -145,8 +144,7 @@ class FAQMatcher:
         self._vocab = sorted(set().union(*self._faq_vocab))
         self._known = set(self._vocab)
 
-        self._vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, token_pattern=r"\S+")
-        self._matrix = self._vec.fit_transform(self._phrasings)
+        self._index = TfidfIndex(word_ngrams).fit(self._phrasings)
 
     def correct(self, words: list[str]) -> list[str]:
         """Snap unknown words to the FAQ vocabulary. Short words are left
@@ -167,7 +165,7 @@ class FAQMatcher:
         if not words:
             return []
         q = " ".join(words)
-        sims = cosine_similarity(self._vec.transform([q]), self._matrix)[0]
+        sims = self._index.similarities(q)
 
         best: dict[int, float] = {}
         for p, owner in enumerate(self._owner):

@@ -9,12 +9,10 @@ English matcher, pointing at the English FAQ entry (id, category), so the
 dialogue manager treats every language the same way.
 """
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
 import config
 from nlu.language import LanguagePack, normalize_any
 from nlu.matcher import Match
+from nlu.tfidf import TfidfIndex, char_wb_ngrams, word_ngrams
 
 try:
     from rapidfuzz import fuzz
@@ -46,10 +44,8 @@ class IndicMatcher:
                 vocab.update(words)
             self._vocab[faq_id] = vocab
 
-        self._word_vec = TfidfVectorizer(token_pattern=r"\S+", ngram_range=(1, 2), sublinear_tf=True)
-        self._char_vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4), sublinear_tf=True)
-        self._word_m = self._word_vec.fit_transform(self._phrasings)
-        self._char_m = self._char_vec.fit_transform(self._phrasings)
+        self._word_index = TfidfIndex(word_ngrams).fit(self._phrasings)
+        self._char_index = TfidfIndex(lambda t: char_wb_ngrams(t, 2, 4)).fit(self._phrasings)
 
     def content_words(self, text: str) -> list[str]:
         return [w for w in normalize_any(text).split() if w not in self._stop]
@@ -59,8 +55,8 @@ class IndicMatcher:
         if not words:
             return []
         q = " ".join(words)
-        word_sims = cosine_similarity(self._word_vec.transform([q]), self._word_m)[0]
-        char_sims = cosine_similarity(self._char_vec.transform([q]), self._char_m)[0]
+        word_sims = self._word_index.similarities(q)
+        char_sims = self._char_index.similarities(q)
 
         best: dict[str, float] = {}
         for p, owner in enumerate(self._owner):

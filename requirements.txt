@@ -1,26 +1,21 @@
-# Everything here is CPU-only and pure/light - no torch, no model downloads.
+# Everything here is CPU-only - no torch, no GPU toolkits, no scikit-learn.
+# Cloud AI SDKs are optional: see requirements-cloud.txt.
 
-# Rule engine
-scikit-learn
-rapidfuzz
+# Rule engine (text chat)
+rapidfuzz         # fuzzy matching (C extension, tiny)
 vaderSentiment    # offline sentiment scoring (pure Python)
+python-dotenv     # reads .env
 
 # Voice (only imported in --mode voice / --speak)
 SpeechRecognition
 sounddevice
 numpy
 pyttsx3
-edge-tts          # neural "Aria" voice (online); pyttsx3 is the offline fallback
+edge-tts          # neural voices (online); offline chain: piper -> pyttsx3
 
 # Offline mode (models downloaded separately: python -m tools.download_models)
 vosk              # offline speech recognition (Kaldi small models, ~40 MB each)
 piper-tts         # offline neural voices (ONNX Runtime on CPU, ~63 MB each)
-
-# AI fallback - install all three, then set whichever API keys you have in .env
-groq
-google-genai
-anthropic
-python-dotenv
 
 # Tests
 pytest
