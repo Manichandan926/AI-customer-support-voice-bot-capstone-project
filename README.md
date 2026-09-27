@@ -4,7 +4,7 @@ Capstone Project 15 - a conversational support assistant ("Aria" for the
 fictional store *ShopEase*) that handles customer queries by text or voice,
 instead of a traditional IVR menu.
 
-Runs on a plain CPU laptop (tested target: Intel i3, 8 GB RAM, Windows 11)
+Runs on a plain CPU laptop (target: Intel i3 10th gen, 8 GB RAM, Windows 11)
 and is sized for a Raspberry Pi 5 (4 GB). No GPU, no required model downloads:
 the core starts in ~0.1 s, uses ~31 MB of RAM and answers in ~1 ms.
 
@@ -184,7 +184,8 @@ drops below these levels. Full list of misses: `docs/evaluation.md`.
 
 ## Performance
 
-Measured on the target laptop (i3-10th gen), text mode, rule engine:
+Measured on the development laptop (AMD Ryzen 7 7435HS; expect roughly 1.5x slower
+on an i3-10th gen), text mode, rule engine:
 
 | | |
 |---|---|
@@ -199,6 +200,24 @@ the same scores to 1e-15. Voice, offline and AI libraries are imported only
 when used. Telugu/Hindi indexes are built only when a message in that
 language arrives, then shared by every conversation in the process, so a
 kiosk starting a new session per customer never rebuilds them.
+
+### Stress test (simulated Raspberry Pi, 1 GB RAM cap)
+
+`python -m tools.stress_test` runs the bot under an OS-enforced memory cap
+on a single core (optionally throttled, `--cpu-fraction 0.4` ~ Pi 5,
+`0.17` ~ Pi 4). Results on the development laptop:
+
+| | full speed | ~Pi 5 speed | ~Pi 4 speed |
+|---|---|---|---|
+| replies per second | 1,700 | 929 | 351 |
+| peak memory, incl. all voice libraries (no models) | 91 MB | 91 MB | 91 MB |
+| memory growth over 300-1,000 customer sessions | 0 MB | 0 MB | 0 MB |
+| crashes on hostile input (empty, emoji, 100k chars, control chars) | none | none | none |
+
+A realistic 10,000-character complaint takes ~0.1 s (estimated ~0.5 s on a
+Pi 4). On a 1 GB device the limit is the offline models, not the bot: one
+Vosk model + one Piper voice fits, several voices or the 1.5B local model
+don't. On a real Pi, run `python -m tools.stress_test` with no throttle.
 
 ## Local AI (optional, no API key)
 
@@ -287,6 +306,7 @@ network.py             cached connectivity check that drives online/offline swit
 tools/download_models.py  one-time offline model download
 tools/evaluate.py      accuracy report on data/eval/test_set.json (held-out questions)
 tools/demo.py          scripted demo of every feature
+tools/stress_test.py   stress test under a memory cap / single slow core (Pi simulation)
 scripts/setup_pi.sh    Raspberry Pi / Linux setup, optional autostart service
 docs/evaluation.md     latest evaluation report
 docs/DEMO.md           demo-day checklist, fallbacks, likely panel questions
