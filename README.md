@@ -1,4 +1,4 @@
-﻿# AI Customer Support Voice Bot
+# AI Customer Support Voice Bot
 
 Capstone Project 15 - a conversational support assistant ("Aria" for the
 fictional store *ShopEase*) that handles customer queries by text or voice,

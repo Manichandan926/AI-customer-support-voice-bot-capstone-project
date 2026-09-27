@@ -1,4 +1,4 @@
-﻿"""All tunables in one place, so thresholds and model names can be adjusted
+"""All tunables in one place, so thresholds and model names can be adjusted
 for the demo without touching engine code."""
 
 import os

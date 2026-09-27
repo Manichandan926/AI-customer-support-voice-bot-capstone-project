@@ -1,4 +1,4 @@
-﻿"""Rule-engine tests. No network or models: the AI fallback is replaced by a
+"""Rule-engine tests. No network or models: the AI fallback is replaced by a
 fake provider so routing logic is verified deterministically."""
 
 import sys

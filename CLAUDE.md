@@ -1,4 +1,4 @@
-﻿# AI Customer Support Voice Bot - Project Context
+# AI Customer Support Voice Bot - Project Context
 
 ## Overview
 
