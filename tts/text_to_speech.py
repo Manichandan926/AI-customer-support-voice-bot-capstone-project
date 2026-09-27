@@ -1,11 +1,14 @@
-"""Text-to-speech in Aria's voice.
+"""Text-to-speech in Aria's voice, with an offline chain behind it:
 
-Primary: Microsoft's neural voices via edge-tts (free, no API key, no local
-model - synthesis happens on Microsoft's servers, like Google ASR does for
-input). It sounds far smoother than the SAPI5 voices built into Windows.
-Fallback: pyttsx3 with Windows' offline female voice (Zira), used whenever
-edge-tts isn't installed or there's no internet, so voice output never
-just stops working mid-demo.
+1. Online: Microsoft's neural voices via edge-tts (free, no API key) -
+   Neerja / Shruti / Swara for English / Telugu / Hindi.
+2. Offline: Piper neural voices (downloaded once, run on the CPU), in all
+   three languages.
+3. Last resort, English only: the operating system's voice via pyttsx3
+   (Windows Zira, Linux espeak-ng), which needs no download at all.
+
+The online voice is skipped whenever the network is known to be down, so an
+outage costs one short connectivity check, not a timeout on every reply.
 """
 
 import asyncio
@@ -17,36 +20,54 @@ import sys
 import tempfile
 
 import config
+import network
 
 
 class TextToSpeech:
     def __init__(self):
         self._edge_ok = config.TTS_ENGINE == "edge"
         self._pyttsx3 = None
+        self._piper = None
+        self.last_engine = ""
 
     def speak(self, text: str, voice: str | None = None, lang: str = "en") -> None:
-        if self._edge_ok:
+        if self._edge_ok and network.is_online():
             try:
                 self._speak_edge(text, voice or config.TTS_VOICE)
+                self.last_engine = "edge"
                 return
+            except ImportError as e:
+                self._edge_ok = False  # not installed: won't fix itself this session
+                print(f"  [tts] {e}", file=sys.stderr)
             except Exception as e:
-                # Don't retry the neural voice every turn once it has failed;
-                # a flaky connection would add seconds of delay to each reply.
-                self._edge_ok = False
-                print(f"  [tts] neural voice unavailable ({type(e).__name__}: {str(e)[:80]}); "
-                      "using offline Windows voice", file=sys.stderr)
+                # Most likely the network dropped; recheck later rather than
+                # giving up on the nicer voice for the rest of the session.
+                network.mark_offline()
+                print(f"  [tts] online voice failed ({type(e).__name__}); using offline voice", file=sys.stderr)
+        if config.OFFLINE_MODE == "never":
+            raise RuntimeError("online voice unavailable - reply shown as text only")
+
+        from tts.offline_tts import PiperSpeaker, is_available
+        if is_available(lang):
+            if self._piper is None:
+                self._piper = PiperSpeaker()
+            self._piper.speak(text, lang)
+            self.last_engine = "piper"
+            return
         if lang != "en":
-            # The offline Windows/espeak voices can't pronounce Telugu or
+            # The built-in Windows/espeak voices can't pronounce Telugu or
             # Hindi script, so say so instead of reading out garbage.
-            raise RuntimeError("the offline voice can't speak this language - reply shown as text only")
+            raise RuntimeError(f"no offline voice for this language - reply shown as text only. "
+                               f"Install one with: python -m tools.download_models --lang {lang}")
         self._speak_sapi(text)
+        self.last_engine = "system"
 
     # ------------------------------------------------------------- neural voice
     def _speak_edge(self, text: str, voice_name: str) -> None:
         try:
             import edge_tts
         except ImportError:
-            raise RuntimeError("edge-tts isn't installed, run: pip install edge-tts") from None
+            raise ImportError("edge-tts isn't installed, run: pip install edge-tts") from None
         fd, path = tempfile.mkstemp(suffix=".mp3", prefix="aria_")
         os.close(fd)
         try:

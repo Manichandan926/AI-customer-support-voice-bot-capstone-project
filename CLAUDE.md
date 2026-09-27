@@ -36,6 +36,10 @@ fastembed + llama-cpp-python + Qwen GGUF, faster-whisper) was dropped in favour 
    English/Telugu/Hindi detected per message; all user-facing text lives in the
    language packs, never in code. Telugu/Hindi matching is word + char n-gram
    TF-IDF with spelling folding. Voice mode takes `--lang` for ASR.
+6. **Offline mode** (`network.py`, `asr/offline_asr.py`, `tts/offline_tts.py`) -
+   `OFFLINE_MODE` auto/always/never. ASR: Google -> Vosk; TTS: edge-tts -> Piper
+   -> pyttsx3 (English only). Models in `models/` (git-ignored), fetched by
+   `python -m tools.download_models`. Piper's `use_cuda` stays off.
 
 Must run on Windows and Linux, including a Raspberry Pi 5 (4GB) - keep
 everything light and cross-platform (Linux playback via mpg123 etc.).

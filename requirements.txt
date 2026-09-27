@@ -12,6 +12,10 @@ numpy
 pyttsx3
 edge-tts          # neural "Aria" voice (online); pyttsx3 is the offline fallback
 
+# Offline mode (models downloaded separately: python -m tools.download_models)
+vosk              # offline speech recognition (Kaldi small models, ~40 MB each)
+piper-tts         # offline neural voices (ONNX Runtime on CPU, ~63 MB each)
+
 # AI fallback - install all three, then set whichever API keys you have in .env
 groq
 google-genai

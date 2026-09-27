@@ -3,7 +3,8 @@
   python main.py                     text chat (smart rules + AI fallback if keys set)
   python main.py --mode voice        speak a question, hear the answer
   python main.py --speak             text input, spoken output
-  python main.py --no-ai             rule engine only, fully offline
+  python main.py --no-ai             rule engine only (no cloud AI)
+  python main.py --offline           never use the internet: offline speech + voices
   python main.py --lang te           start in Telugu (te) or Hindi (hi); text mode
                                      also switches language per message automatically
 """
@@ -49,12 +50,26 @@ def voice_for(lang: str) -> str:
     return config.TTS_VOICE if lang == "en" else load_pack(lang).tts_voice
 
 
-def print_banner(bot: DialogueManager, mode: str) -> None:
+def print_banner(bot: DialogueManager, mode: str, uses_voice: bool) -> None:
     ai = ", ".join(bot.ai.available) if bot.ai else "off (rule engine only)"
     print(f"{BOLD}{config.COMPANY_NAME} Customer Support - {config.BOT_NAME}{RESET}")
     print(f"{DIM}mode: {mode} | language: {load_pack(bot.lang).name} (auto-detect: English, Telugu, Hindi)"
           f" | FAQs: {len(bot.matcher.faqs)} | AI fallback: {ai}")
+    if uses_voice:
+        print(voice_status())
     print(f"say or type 'exit' to quit{RESET}\n")
+
+
+def voice_status() -> str:
+    import network
+    from asr.offline_asr import is_available as asr_ready
+    from tts.offline_tts import is_available as voice_ready
+    langs = list(config.PIPER_VOICES)
+    offline_asr = ",".join(l for l in langs if asr_ready(l)) or "none"
+    offline_tts = ",".join(l for l in langs if voice_ready(l)) or "none"
+    net = "online (Google speech + neural voices)" if network.is_online() else "OFFLINE"
+    return (f"network: {net} | offline backup - speech: {offline_asr}, voices: {offline_tts}"
+            + ("" if offline_asr != "none" else "  (python -m tools.download_models)"))
 
 
 def print_turn(turn) -> None:
@@ -86,7 +101,8 @@ def get_voice_query(stt) -> str | None:
     if not text:
         print(f"{YELLOW}  Didn't catch that - please try again.{RESET}")
         return None
-    print(f"{BOLD}You (voice):{RESET} {text}")
+    engine = " offline" if stt.last_engine == "vosk" else ""
+    print(f"{BOLD}You (voice{engine}):{RESET} {text}")
     return text
 
 
@@ -97,9 +113,13 @@ def main() -> None:
     parser.add_argument("--no-ai", action="store_true", help="disable the cloud AI fallback")
     parser.add_argument("--lang", choices=SUPPORTED, default=config.DEFAULT_LANGUAGE,
                         help="starting language; voice mode listens in this language")
+    parser.add_argument("--offline", action="store_true",
+                        help="never use the internet (offline speech recognition and voices, no cloud AI)")
     args = parser.parse_args()
+    if args.offline:
+        config.OFFLINE_MODE = "always"
 
-    bot = build_bot(use_ai=not args.no_ai, language=args.lang)
+    bot = build_bot(use_ai=not (args.no_ai or args.offline), language=args.lang)
 
     # Voice libraries are imported only when needed so text mode starts instantly.
     stt = tts = None
@@ -107,12 +127,14 @@ def main() -> None:
         from asr.speech_to_text import SpeechToText
         # Speech recognition needs the language up front; English keeps the
         # configurable accent (ASR_LANGUAGE, default en-IN).
-        stt = SpeechToText(config.ASR_LANGUAGE if args.lang == "en" else load_pack(args.lang).asr_code)
+        stt = SpeechToText(config.ASR_LANGUAGE if args.lang == "en" else load_pack(args.lang).asr_code,
+                           lang=args.lang)
     if args.mode == "voice" or args.speak:
         from tts.text_to_speech import TextToSpeech
         tts = TextToSpeech()
 
-    print_banner(bot, args.mode + (" + speech output" if args.speak and args.mode == "text" else ""))
+    print_banner(bot, args.mode + (" + speech output" if args.speak and args.mode == "text" else "")
+                 + (" (offline)" if args.offline else ""), uses_voice=tts is not None)
     greeting = bot.greeting()
     print(f"{BOLD}{config.BOT_NAME}:{RESET} {greeting}\n")
 

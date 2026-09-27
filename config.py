@@ -97,7 +97,36 @@ TTS_VOICE = os.getenv("TTS_VOICE", "en-IN-NeerjaNeural")
 TTS_NEURAL_RATE = "+5%"    # speaking speed: "+0%" is normal, "+10%" faster, "-10%" slower
 TTS_NEURAL_PITCH = "+0Hz"
 
-# Offline fallback (Windows SAPI5 via pyttsx3)
+# --- Offline mode -------------------------------------------------------------
+# "auto": online services when the internet is up, offline models otherwise.
+# "always": never touch the network (also: python main.py --offline).
+# "never": online only, as before.
+OFFLINE_MODE = os.getenv("OFFLINE_MODE", "auto")
+MODELS_DIR = BASE_DIR / "models"   # filled by: python -m tools.download_models
+
+NET_CHECK_HOST = "www.google.com"  # reachable if both Google ASR and Edge TTS are
+NET_CHECK_TIMEOUT = 1.5            # seconds; a dead network must not stall a reply
+NET_CHECK_TTL = 30                 # seconds to trust the last check
+
+# Offline speech recognition (Vosk, ~40 MB each). Telugu's small model is
+# weak on free speech (~88% word error rate), so for Telugu the recognizer is
+# limited to words that occur in the FAQ, which is far easier to get right.
+VOSK_MODELS = {
+    "en": "vosk-model-small-en-in-0.4",
+    "hi": "vosk-model-small-hi-0.22",
+    "te": "vosk-model-small-te-0.42",
+}
+VOSK_GRAMMAR_LANGS = ("te",)
+
+# Offline neural voices (Piper, ~63 MB each, ONNX on CPU).
+PIPER_VOICES = {
+    "en": "en_US-hfc_female-medium",
+    "hi": "hi_IN-priyamvada-medium",
+    "te": "te_IN-maya-medium",
+}
+PIPER_LENGTH_SCALE = 1.0   # speaking pace: below 1.0 is faster, above is slower
+
+# Last-resort offline English voice (Windows SAPI5 / Linux espeak-ng via pyttsx3)
 TTS_OFFLINE_VOICE = "Zira"  # Windows' built-in female voice
 TTS_RATE = 160              # words per minute; default ~200 sounds rushed
 TTS_VOLUME = 0.9

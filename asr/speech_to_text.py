@@ -1,4 +1,4 @@
-"""Speech-to-text via the SpeechRecognition library's free Google recognizer.
+"""Speech-to-text: Google's free recognizer when online, Vosk when offline.
 
 Audio is captured with sounddevice rather than SpeechRecognition's own
 Microphone class, because that needs PyAudio, which often has no prebuilt
@@ -12,6 +12,7 @@ long ones aren't cut off.
 from collections import deque
 
 import config
+import network
 
 FRAME_SECONDS = config.VAD_FRAME_MS / 1000
 
@@ -72,10 +73,13 @@ class Endpointer:
 
 
 class SpeechToText:
-    def __init__(self, language: str = config.ASR_LANGUAGE):
-        self.language = language
+    def __init__(self, language: str = config.ASR_LANGUAGE, lang: str = "en"):
+        self.language = language   # Google locale, e.g. "te-IN"
+        self.lang = lang           # bot language code, picks the offline model
         self._sr = None
         self._recognizer = None
+        self._offline = None
+        self.last_engine = ""      # "google" or "vosk", for display
 
     def _load(self):
         if self._recognizer is None:
@@ -130,28 +134,51 @@ class SpeechToText:
         return np.concatenate(frames)
 
     def transcribe_samples(self, samples) -> str:
-        sr = self._load()
-        data = sr.AudioData(samples.tobytes(), config.SAMPLE_RATE, 2)
-        return self._recognize(data)
+        """Online recognition when possible; on no internet (or a failed
+        request) the same audio goes to the offline model instead."""
+        if network.is_online():
+            try:
+                text = self._recognize_google(samples)
+                self.last_engine = "google"
+                return text
+            except ConnectionError:
+                network.mark_offline()
+        if config.OFFLINE_MODE == "never":
+            raise RuntimeError("Google speech service unreachable. Check your internet connection, "
+                               "or type your question instead.")
+        return self._recognize_offline(samples)
 
     def transcribe_file(self, path: str) -> str:
+        import numpy as np
         sr = self._load()
         with sr.AudioFile(path) as source:
             data = self._recognizer.record(source)
-        return self._recognize(data)
+        raw = data.get_raw_data(convert_rate=config.SAMPLE_RATE, convert_width=2)
+        return self.transcribe_samples(np.frombuffer(raw, dtype=np.int16))
+
+    def _recognize_offline(self, samples) -> str:
+        from asr.offline_asr import VoskRecognizer, is_available
+        if not is_available(self.lang):
+            raise RuntimeError(f"No internet, and the offline speech model for '{self.lang}' isn't installed. "
+                               f"Run: python -m tools.download_models --lang {self.lang}  (or type your question)")
+        if self._offline is None:
+            self._offline = VoskRecognizer(self.lang)
+        self.last_engine = "vosk"
+        return self._offline.transcribe(samples)
 
     def listen(self, on_speech_start=None) -> str:
         samples = self.record_utterance(on_speech_start)
         return "" if samples is None else self.transcribe_samples(samples)
 
-    def _recognize(self, data) -> str:
+    def _recognize_google(self, samples) -> str:
+        sr = self._load()
+        data = sr.AudioData(samples.tobytes(), config.SAMPLE_RATE, 2)
         try:
             return self._recognizer.recognize_google(data, language=self.language)
         except self._sr.UnknownValueError:
             return ""  # speech was unintelligible
         except self._sr.RequestError as e:
-            raise RuntimeError(f"Google speech service unreachable ({e}). Check your internet connection, "
-                               "or type your question instead.") from None
+            raise ConnectionError(str(e)) from None
 
 
 def _mic_check() -> None:

@@ -43,6 +43,10 @@ No GPU, no local ML models, no multi-GB downloads.
 - **Sentiment detection** (offline, VADER + an anger lexicon): upset customers
   get an empathetic reply; repeated anger hands them to a senior agent with
   priority instead of another bot answer.
+- **Works offline too**: with no internet, speech recognition switches to
+  Vosk and replies to Piper neural voices, automatically - both run on the CPU
+  and fit on a Raspberry Pi. Online, the better Google/Microsoft services are
+  used.
 - **Hands-free listening**: voice mode stops recording when you stop talking,
   adapting to the room's background noise.
 - **Session stats** (turns, answered, AI-answered, clarified, escalated,
@@ -73,6 +77,7 @@ python main.py --mode voice         # press Enter, speak; it stops when you stop
 python main.py --speak              # type questions, hear replies
 python main.py --no-ai              # rule engine only, fully offline
 python main.py --mode voice --lang te   # listen and reply in Telugu (hi = Hindi)
+python main.py --mode voice --offline   # force offline speech + voices (no internet used)
 pytest tests/ -v                    # unit tests (no network, mic or speaker needed)
 python -m asr.speech_to_text        # mic check: shows noise level, threshold, transcript
 ```
@@ -128,7 +133,29 @@ python main.py --mode voice
 ```
 
 `mpg123` plays the neural voice, `libportaudio2` gives Python mic access, and
-`espeak-ng` is the offline fallback voice.
+`espeak-ng` is the last-resort offline voice. For proper offline voices and
+speech recognition, also run `python -m tools.download_models`.
+
+## Offline mode
+
+One-time download of the offline models (~330 MB, into `models/`, which git ignores):
+
+```bash
+python -m tools.download_models            # English, Hindi, Telugu: speech models + voices
+python -m tools.download_models --status   # what's installed
+```
+
+| | Online (default when internet is up) | Offline (automatic, or `--offline`) |
+|---|---|---|
+| Speech recognition | Google (free, no key) | Vosk small models - English, Hindi; Telugu limited to FAQ vocabulary |
+| Voice | Microsoft neural: Neerja, Shruti, Swara | Piper neural: hfc_female, Priyamvada, Maya |
+| Without any download | - | English: Windows/espeak system voice; typing works in every language |
+
+The bot checks connectivity once (cached for 30 s) and falls back per
+utterance, so a dropped connection mid-demo costs one short timeout, not a
+frozen bot. Offline Telugu *recognition* is the weak spot: the only small
+Telugu model mishears most free speech, so it's restricted to words that
+appear in the Telugu FAQ - fine for FAQ-style questions, not for open chat.
 
 ## Telugu and Hindi
 
@@ -174,7 +201,11 @@ data/i18n/*.json       English / Telugu / Hindi text: FAQs, messages, orders, wo
 dialogue/manager.py    confidence routing, context, clarification, stats
 ai/llm.py              Groq / Gemini / Claude fallback chain
 asr/speech_to_text.py  mic capture with end-of-speech detection + Google speech recognition
-tts/text_to_speech.py  neural voice via edge-tts, offline fallback via pyttsx3
+tts/text_to_speech.py  voice chain: edge-tts online -> Piper offline -> system voice
+tts/offline_tts.py     Piper offline neural voices
+asr/offline_asr.py     Vosk offline speech recognition (+ Telugu FAQ grammar)
+network.py             cached connectivity check that drives online/offline switching
+tools/download_models.py  one-time offline model download
 main.py                CLI
 tests/                 unit tests (matcher, dialogue, AI fallback, sentiment, endpointing, playback, multilingual)
 ```
